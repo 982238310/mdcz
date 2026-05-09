@@ -10,7 +10,7 @@ import {
   NfoGenerator,
   TranslateService,
 } from "@mdcz/runtime/scrape";
-import type { ServerConfigService } from "./configService";
+import type { ServerConfigService } from "./services/configService";
 
 class MemoryImageHostCooldownStore {
   private readonly entries = new Map<string, { failures: number[]; cooldownUntil?: number }>();

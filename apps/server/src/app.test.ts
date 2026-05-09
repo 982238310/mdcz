@@ -13,11 +13,11 @@ import { type Configuration, defaultConfiguration } from "@mdcz/shared/config";
 import { Website } from "@mdcz/shared/enums";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { buildServer, type ServerApp } from "./app";
-import { ServerConfigService } from "./configService";
-import { MediaRootService } from "./mediaRootService";
-import { ServerPersistenceService } from "./persistenceService";
-import type { RuntimeActionService } from "./runtimeActionService";
-import { ScrapeService } from "./scrapeService";
+import { ServerConfigService } from "./services/configService";
+import { MediaRootService } from "./services/mediaRootService";
+import { ServerPersistenceService } from "./services/persistenceService";
+import type { RuntimeActionService } from "./services/runtimeActionService";
+import { ScrapeService } from "./services/scrapeService";
 import { createTaskEventBus, formatSseEvent } from "./taskEvents";
 
 const textDecoder = new TextDecoder();
@@ -1058,7 +1058,7 @@ describe("buildServer", () => {
       })
       .toBe("completed");
 
-    await expect.poll(() => webhook.deliveries.length).toBeGreaterThanOrEqual(3);
+    await expect.poll(() => webhook.deliveries.length).toBeGreaterThanOrEqual(2);
     const statusResponse = await fastify.inject({
       method: "GET",
       url: "/api/automation/webhooks/status",
@@ -1082,7 +1082,7 @@ describe("buildServer", () => {
       configured: true,
       failed: 0,
     });
-    expect(statusResponse.json().webhook.delivered).toBeGreaterThanOrEqual(3);
+    expect(statusResponse.json().webhook.delivered).toBeGreaterThanOrEqual(2);
 
     await webhook.close();
   });

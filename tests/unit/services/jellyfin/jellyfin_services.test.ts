@@ -16,8 +16,8 @@ import {
   JellyfinActorInfoService,
   JellyfinActorPhotoService,
 } from "@main/services/mediaServer/jellyfin";
-import type { NetworkClient } from "@main/services/network";
 import { SignalService } from "@main/services/SignalService";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import { app } from "electron";
 import { afterEach, describe, expect, it, vi } from "vitest";
 

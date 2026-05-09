@@ -1,7 +1,7 @@
 import { CrawlerProvider, FetchGateway } from "@mdcz/runtime/crawler";
 import type { NetworkClient } from "@mdcz/runtime/network";
 import { AggregationService, MountedRootScrapeRuntime } from "@mdcz/runtime/scrape";
-import type { ServerConfigService } from "./configService";
+import type { ServerConfigService } from "./services/configService";
 
 export const createServerScrapeRuntime = (
   config: ServerConfigService,

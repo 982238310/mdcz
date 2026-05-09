@@ -48,9 +48,9 @@ const renderNamingTemplate = (template: string): string =>
   });
 
 describe("route helpers", () => {
-  it("builds contained browser links with encoded query parameters", () => {
-    expect(buildHref("/browser", { path: "A B/01", rootId: "root-1", unused: undefined })).toBe(
-      "/browser?path=A+B%2F01&rootId=root-1",
+  it("builds links with encoded query parameters", () => {
+    expect(buildHref("/settings", { setting: "paths.mediaPath", rootId: "root-1", unused: undefined })).toBe(
+      "/settings?setting=paths.mediaPath&rootId=root-1",
     );
   });
 

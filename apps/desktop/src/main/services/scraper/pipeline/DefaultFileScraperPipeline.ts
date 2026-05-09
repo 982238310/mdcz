@@ -1,8 +1,8 @@
 import { ActorImageService } from "@main/services/ActorImageService";
 import { configManager } from "@main/services/config";
 import { loggerService } from "@main/services/LoggerService";
-import { LocalScanService } from "@main/services/scraper/maintenance/LocalScanService";
 import { toErrorMessage } from "@main/utils/common";
+import { LocalScanService } from "@mdcz/runtime/maintenance";
 import {
   AggregateStage,
   AggregationCoordinator,

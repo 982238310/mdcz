@@ -1,10 +1,10 @@
+import { Button } from "@mdcz/ui";
 import { createFileRoute } from "@tanstack/react-router";
 import { ArrowLeft } from "lucide-react";
 import { useRef, useState } from "react";
 import { ToolDetail } from "@/components/tool/ToolDetail";
 import { ToolOverview } from "@/components/tool/ToolOverview";
 import type { ToolId } from "@/components/tool/toolCatalog";
-import { Button } from "@/components/ui/Button";
 
 export const Route = createFileRoute("/tools")({
   component: ToolComponent,

@@ -1,4 +1,4 @@
-import { Fc2HubCrawler } from "@main/services/crawler/sites/fc2hub";
+import { Fc2HubCrawler } from "@mdcz/runtime/crawler/sites/fc2hub";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

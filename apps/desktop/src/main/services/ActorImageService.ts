@@ -1,9 +1,9 @@
 import type { ActorSourceHint, ActorSourceProvider } from "@main/services/actorSource";
 import type { Configuration } from "@main/services/config";
 import { loggerService } from "@main/services/LoggerService";
-import type { NetworkClient } from "@main/services/network";
 import { normalizeActorName, toUniqueActorNames } from "@main/utils/actor";
 import { mergeActorProfiles } from "@main/utils/actorProfile";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import type { ActorProfile } from "@mdcz/shared/types";
 import { ActorImageFileStore, type ActorImageLookupOptions } from "./actorImage/ActorImageFileStore";
 import { ActorPhotoMaterializer } from "./actorImage/ActorPhotoMaterializer";

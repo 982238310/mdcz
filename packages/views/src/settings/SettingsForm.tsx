@@ -1,4 +1,5 @@
 import { Search } from "lucide-react";
+import type { ReactNode } from "react";
 import { AdvancedSettingsFooterContent } from "./SettingsFooter";
 import { useSettingsSearch } from "./SettingsSearchContext";
 import { useCrawlerSiteOptions } from "./settingsContent";
@@ -15,11 +16,12 @@ import {
 } from "./TopLevelSections";
 
 interface SettingsFormProps {
+  extraContent?: ReactNode;
   flatDefaults: Record<string, unknown>;
   initialUseCustomTitleBar: boolean;
 }
 
-export function SettingsForm({ flatDefaults, initialUseCustomTitleBar }: SettingsFormProps) {
+export function SettingsForm({ extraContent, flatDefaults, initialUseCustomTitleBar }: SettingsFormProps) {
   const siteOptions = useCrawlerSiteOptions(flatDefaults);
   const search = useSettingsSearch();
 
@@ -47,6 +49,7 @@ export function SettingsForm({ flatDefaults, initialUseCustomTitleBar }: Setting
         </>
       )}
 
+      {extraContent}
       <AdvancedSettingsFooter />
     </div>
   );

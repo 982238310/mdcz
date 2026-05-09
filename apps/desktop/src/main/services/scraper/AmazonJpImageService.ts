@@ -1,6 +1,6 @@
 import { loggerService } from "@main/services/LoggerService";
-import { InMemoryCookieJar, type NetworkClient, type NetworkSession } from "@main/services/network";
 import { toErrorMessage } from "@main/utils/common";
+import { InMemoryCookieJar, type NetworkClient, type NetworkSession } from "@mdcz/runtime/network";
 import { Website } from "@mdcz/shared/enums";
 import type { CrawlerData } from "@mdcz/shared/types";
 import { load } from "cheerio";

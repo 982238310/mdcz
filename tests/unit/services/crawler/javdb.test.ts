@@ -1,4 +1,4 @@
-import { JavdbCrawler } from "@main/services/crawler/sites/javdb";
+import { JavdbCrawler } from "@mdcz/runtime/crawler/sites/javdb";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

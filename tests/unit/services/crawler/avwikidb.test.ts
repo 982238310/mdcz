@@ -1,4 +1,4 @@
-import { AvwikidbCrawler } from "@main/services/crawler/sites/avwikidb";
+import { AvwikidbCrawler } from "@mdcz/runtime/crawler/sites/avwikidb";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

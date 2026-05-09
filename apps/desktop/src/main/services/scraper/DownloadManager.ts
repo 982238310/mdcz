@@ -3,7 +3,7 @@ import {
   type PersistentCooldownStore,
 } from "@main/services/cooldown/PersistentCooldownStore";
 import { loggerService } from "@main/services/LoggerService";
-import type { NetworkClient } from "@main/services/network";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import {
   DownloadManager as RuntimeDownloadManager,
   type DownloadManagerOptions as RuntimeDownloadManagerOptions,

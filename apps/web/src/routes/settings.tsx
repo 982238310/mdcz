@@ -4,9 +4,10 @@ import { useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-
-import { ipc } from "../client/ipc";
+import { clearImportedFile, promptForImportFile, readImportedFile, triggerDownload } from "../browserFile";
+import { api } from "../client";
 import { useConfigProfiles, useCurrentConfig, useDefaultConfig } from "../hooks/configQueries";
+import { MediaDirectoriesSection } from "./MediaDirectoriesSection";
 import {
   createSettingsNotifier,
   createSettingsServices,
@@ -86,7 +87,7 @@ export const SettingsPage = () => {
       return;
     }
     try {
-      await ipc.config.reset();
+      await api.config.reset();
       invalidateConfigQueries(queryClient);
       toast.success(`已恢复档案 "${activeProfile ?? "default"}" 的默认设置`);
       setResetDialogOpen(false);
@@ -99,7 +100,7 @@ export const SettingsPage = () => {
     const name = newProfileName.trim();
     if (!name) return;
     try {
-      await ipc.config.createProfile(name);
+      await api.config.profiles.create({ name });
       invalidateConfigQueries(queryClient);
       toast.success(`配置档案 "${name}" 已创建`);
       setNewProfileName("");
@@ -117,7 +118,7 @@ export const SettingsPage = () => {
       return;
     }
     try {
-      await ipc.config.switchProfile(name);
+      await api.config.profiles.switch({ name });
       invalidateConfigQueries(queryClient);
       toast.success(`已切换到配置档案 "${name}"`);
     } catch (error) {
@@ -128,7 +129,7 @@ export const SettingsPage = () => {
   const handleDeleteProfile = async () => {
     if (!deleteProfileName) return;
     try {
-      await ipc.config.deleteProfile(deleteProfileName);
+      await api.config.profiles.delete({ name: deleteProfileName });
       invalidateConfigQueries(queryClient);
       toast.success("配置档案已删除");
       setDeleteProfileDialogOpen(false);
@@ -147,10 +148,8 @@ export const SettingsPage = () => {
     }
 
     try {
-      const result = await ipc.config.exportProfile(activeProfile);
-      if (result.canceled) {
-        return;
-      }
+      const result = await api.config.profiles.export({ name: activeProfile });
+      triggerDownload(result.fileName, result.content, "application/toml;charset=utf-8");
       toast.success(`配置档案 "${result.profileName}" 已导出`);
     } catch (error) {
       handleProfileActionError("导出失败", error);
@@ -164,16 +163,14 @@ export const SettingsPage = () => {
 
   const handleBrowseImportFile = async () => {
     try {
-      const result = await ipc.file.browse("file", [...PROFILE_IMPORT_FILTERS]);
-      const filePath = result.paths?.[0]?.trim();
-      if (!filePath) {
+      const result = await promptForImportFile([...PROFILE_IMPORT_FILTERS]);
+      if (!result) {
         return;
       }
 
-      setImportFilePath(filePath);
-      const fileName = filePath.split("/").at(-1) ?? filePath;
-      setImportFileLabel(fileName);
-      setImportProfileName(suggestImportProfileName(fileName, profiles));
+      setImportFilePath(result.path);
+      setImportFileLabel(result.label);
+      setImportProfileName(suggestImportProfileName(result.label, profiles));
     } catch (error) {
       handleProfileActionError("选择文件失败", error);
     }
@@ -188,7 +185,14 @@ export const SettingsPage = () => {
     }
 
     try {
-      const result = await ipc.config.importProfile(importFilePath, importTargetName, importMode === "overwrite");
+      const file = await readImportedFile(importFilePath);
+      const result = await api.config.profiles.import({
+        name: importTargetName,
+        content: file.content,
+        fileName: file.fileName,
+        overwrite: importMode === "overwrite",
+      });
+      clearImportedFile(importFilePath);
       invalidateConfigQueries(queryClient);
       toast.success(
         result.overwritten ? `配置档案 "${result.profileName}" 已覆盖导入` : `配置档案 "${result.profileName}" 已导入`,
@@ -224,6 +228,7 @@ export const SettingsPage = () => {
               onResetConfig={handleOpenResetDialog}
               onExportProfile={handleExportProfile}
               onImportProfile={handleOpenImportDialog}
+              extraContent={<MediaDirectoriesSection />}
             />
           ) : (
             <SettingsLayout

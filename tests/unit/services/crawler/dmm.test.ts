@@ -1,4 +1,4 @@
-import { DmmCrawler } from "@main/services/crawler/sites/dmm";
+import { DmmCrawler } from "@mdcz/runtime/crawler/sites/dmm";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

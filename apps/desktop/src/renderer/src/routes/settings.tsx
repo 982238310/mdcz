@@ -1,6 +1,22 @@
 import { toErrorMessage } from "@mdcz/shared/error";
 import { useSettingsSavingStore } from "@mdcz/shared/stores/settingsSavingStore";
 import {
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@mdcz/ui";
+import {
   mergeConfigWithFlatPayload,
   type SettingsCrawlerSiteInfo,
   SettingsEditor,
@@ -14,21 +30,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { ipc } from "@/client/ipc";
-import { Button } from "@/components/ui/Button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/Dialog";
-import { Input } from "@/components/ui/Input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/Select";
-import { useConfigProfiles } from "@/hooks/useConfigProfiles";
-import { CURRENT_CONFIG_QUERY_KEY, useCurrentConfig } from "@/hooks/useCurrentConfig";
-import { useDefaultConfig } from "@/hooks/useDefaultConfig";
+import { CURRENT_CONFIG_QUERY_KEY, useConfigProfiles, useCurrentConfig, useDefaultConfig } from "@/hooks/configQueries";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/settings")({

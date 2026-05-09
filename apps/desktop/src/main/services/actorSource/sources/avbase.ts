@@ -1,9 +1,9 @@
 import type { Configuration } from "@main/services/config";
-import type { NetworkClient } from "@main/services/network";
 import { normalizeActorName, toUniqueActorNames } from "@main/utils/actor";
 import { parseActorBloodType, parseActorCupSize, parseActorDate, parseActorMetricCm } from "@main/utils/actorProfile";
 import { buildUrl, getProperty, toErrorMessage } from "@main/utils/common";
 import { normalizeText } from "@main/utils/normalization";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import { mergeActorSourceHints } from "../sourceHints";
 import type { ActorLookupQuery, ActorSourceResult, BaseActorSource } from "../types";
 

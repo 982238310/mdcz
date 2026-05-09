@@ -1,6 +1,6 @@
+import { Badge } from "@mdcz/ui";
 import { ImageIcon } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Badge } from "@/components/ui/Badge";
 import { useResolvedImageCandidates } from "@/hooks/useResolvedImageSources";
 import { cn } from "@/lib/utils";
 

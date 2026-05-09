@@ -3,7 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 
-import { ServerPersistenceService } from "./persistenceService";
+import { ServerPersistenceService } from "./services/persistenceService";
 
 const createDatabasePath = async (): Promise<string> =>
   join(await mkdtemp(join(tmpdir(), "mdcz-server-db-")), "data", "mdcz.sqlite");

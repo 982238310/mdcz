@@ -6,16 +6,16 @@ import {
   createImageHostCooldownStore,
   type PersistentCooldownStore,
 } from "@main/services/cooldown/PersistentCooldownStore";
-import type { CrawlerProvider } from "@main/services/crawler";
 import { loggerService } from "@main/services/LoggerService";
 import { OutputLibraryScanner } from "@main/services/library";
-import type { NetworkClient } from "@main/services/network";
 import { DesktopPersistenceService } from "@main/services/persistence";
 import type { SignalService } from "@main/services/SignalService";
 import { didPromiseTimeout } from "@main/utils/async";
 import { toErrorMessage } from "@main/utils/common";
 import { toRootRelativePath } from "@mdcz/media-store";
+import type { CrawlerProvider } from "@mdcz/runtime/crawler";
 import { createDesktopOutputRoot, resolveDesktopOutputRootPath, toLibraryAssets } from "@mdcz/runtime/library";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import {
   applyScrapeNetworkPolicy,
   createScrapeExecutionPolicy,

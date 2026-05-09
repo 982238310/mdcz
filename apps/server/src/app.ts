@@ -1,108 +1,39 @@
-import { existsSync, statSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { existsSync } from "node:fs";
 import path from "node:path";
 import { runtimeLoggerService } from "@mdcz/runtime/shared";
 import { automationRecentInputSchema, automationScrapeStartInputSchema } from "@mdcz/shared/serverDtos";
 import { type CreateFastifyContextOptions, fastifyTRPCPlugin } from "@trpc/server/adapters/fastify";
-import Fastify, { type FastifyInstance, type FastifyReply, type FastifyRequest } from "fastify";
-import { AuthService } from "./authService";
-import { AutomationService } from "./automationService";
-import { BrowserService } from "./browserService";
-import { ServerConfigService } from "./configService";
-import { DiagnosticsService } from "./diagnosticsService";
-import { createHealthPayload } from "./http";
-import { LibraryService } from "./libraryService";
-import { MaintenanceService } from "./maintenanceService";
-import { MediaRootService } from "./mediaRootService";
-import { ServerPersistenceService } from "./persistenceService";
+import Fastify, { type FastifyInstance } from "fastify";
+import { getBearerToken } from "./http/auth";
+import { applyCorsHeaders } from "./http/cors";
+import { createHealthPayload } from "./http/health";
+import { writeTaskEventsStream } from "./http/sse";
+import { defaultWebStaticDir, registerStaticWeb } from "./http/staticWeb";
 import { appRouter } from "./router";
-import { RuntimeActionService } from "./runtimeActionService";
-import { RuntimeLogService } from "./runtimeLogService";
-import { ScanQueueService } from "./scanQueueService";
-import { ScrapeService } from "./scrapeService";
-import { ServerPathService } from "./serverPathService";
 import type { ServerServiceOptions, ServerServices } from "./services";
-import { SystemService } from "./systemService";
-import { createTaskEventBus, formatSseEvent } from "./taskEvents";
-import { ToolsService } from "./toolsService";
+import { AuthService } from "./services/authService";
+import { AutomationService } from "./services/automationService";
+import { BrowserService } from "./services/browserService";
+import { ServerConfigService } from "./services/configService";
+import { DiagnosticsService } from "./services/diagnosticsService";
+import { LibraryService } from "./services/libraryService";
+import { MaintenanceService } from "./services/maintenanceService";
+import { MediaRootService } from "./services/mediaRootService";
+import { ServerPersistenceService } from "./services/persistenceService";
+import { RuntimeActionService } from "./services/runtimeActionService";
+import { RuntimeLogService } from "./services/runtimeLogService";
+import { ScanQueueService } from "./services/scanQueueService";
+import { ScrapeService } from "./services/scrapeService";
+import { ServerPathService } from "./services/serverPathService";
+import { SystemService } from "./services/systemService";
+import { ToolsService } from "./services/toolsService";
+import { createTaskEventBus } from "./taskEvents";
 
 export interface BuildServerOptions {
   serviceOptions?: ServerServiceOptions;
   services?: Partial<ServerServices>;
   webStaticDir?: string | false;
 }
-
-const getBearerToken = (request: FastifyRequest): string | undefined => {
-  const authorization = request.headers.authorization;
-  if (authorization?.toLowerCase().startsWith("bearer ")) {
-    return authorization.slice("bearer ".length).trim();
-  }
-
-  const query = request.query as { token?: string } | undefined;
-  return query?.token;
-};
-
-const allowedCorsOrigins = new Set([
-  "http://localhost:5173",
-  "http://localhost:5174",
-  "http://127.0.0.1:5173",
-  "http://127.0.0.1:5174",
-]);
-
-const applyCorsHeaders = (request: FastifyRequest, reply: FastifyReply): void => {
-  const origin = request.headers.origin;
-  if (!origin || !allowedCorsOrigins.has(origin)) {
-    return;
-  }
-
-  reply.header("access-control-allow-origin", origin);
-  reply.header("vary", "Origin");
-  reply.header("access-control-allow-methods", "GET,POST,OPTIONS");
-  reply.header("access-control-allow-headers", "content-type,authorization");
-};
-
-const contentTypes: Record<string, string> = {
-  ".css": "text/css; charset=utf-8",
-  ".html": "text/html; charset=utf-8",
-  ".ico": "image/x-icon",
-  ".js": "text/javascript; charset=utf-8",
-  ".json": "application/json; charset=utf-8",
-  ".map": "application/json; charset=utf-8",
-  ".png": "image/png",
-  ".svg": "image/svg+xml; charset=utf-8",
-  ".webp": "image/webp",
-};
-
-const defaultWebStaticDir = (): string => path.resolve(process.env.MDCZ_WEB_DIST_DIR ?? "dist/web");
-
-const isPathInside = (root: string, candidate: string): boolean => {
-  const relative = path.relative(root, candidate);
-  return relative === "" || (!relative.startsWith("..") && !path.isAbsolute(relative));
-};
-
-const isReadableFile = (candidate: string): boolean => {
-  try {
-    return statSync(candidate).isFile();
-  } catch {
-    return false;
-  }
-};
-
-const registerStaticWeb = (fastify: FastifyInstance, webStaticDir: string): void => {
-  const staticRoot = path.resolve(webStaticDir);
-  fastify.get("/*", async (request, reply) => {
-    const rawPath = request.url.split("?")[0] ?? "/";
-    const decodedPath = decodeURIComponent(rawPath);
-    const candidate = path.resolve(staticRoot, decodedPath.replace(/^\/+/u, ""));
-    const filePath =
-      isPathInside(staticRoot, candidate) && isReadableFile(candidate)
-        ? candidate
-        : path.join(staticRoot, "index.html");
-    const extension = path.extname(filePath);
-    reply.type(contentTypes[extension] ?? "application/octet-stream");
-    return await readFile(filePath);
-  });
-};
 
 export interface ServerApp {
   fastify: FastifyInstance;
@@ -204,40 +135,7 @@ export const buildServer = (options: BuildServerOptions = {}): ServerApp => {
   fastify.get("/events/tasks", async (request, reply) => {
     services.auth.assertAuthenticated(getBearerToken(request));
     reply.hijack();
-    reply.raw.writeHead(200, {
-      "cache-control": "no-cache, no-transform",
-      connection: "keep-alive",
-      "content-type": "text/event-stream; charset=utf-8",
-      "x-accel-buffering": "no",
-    });
-    reply.raw.write(": connected\n\n");
-
-    const heartbeatInterval = setInterval(() => {
-      reply.raw.write(": heartbeat\n\n");
-    }, 30_000);
-    const unsubscribe = services.taskEvents.subscribe((event) => {
-      reply.raw.write(formatSseEvent(event));
-    });
-    const [scanSnapshot, scrapeSnapshot, maintenanceSnapshot] = await Promise.all([
-      services.scans.list(),
-      services.scrape.list(),
-      services.maintenance.list(),
-    ]);
-    reply.raw.write(
-      formatSseEvent({
-        id: "snapshot",
-        event: "task-update",
-        data: {
-          kind: "snapshot",
-          tasks: [...scanSnapshot.tasks, ...scrapeSnapshot.tasks, ...maintenanceSnapshot.tasks],
-        },
-      }),
-    );
-
-    request.raw.on("close", () => {
-      clearInterval(heartbeatInterval);
-      unsubscribe();
-    });
+    await writeTaskEventsStream(services, reply.raw);
   });
 
   if (hasStaticWeb && webStaticDir) {

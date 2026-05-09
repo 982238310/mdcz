@@ -1,8 +1,8 @@
 import { readFile } from "node:fs/promises";
-import type { NetworkClient } from "@main/services/network";
 import type { SignalService } from "@main/services/SignalService";
 import { isRecord } from "@main/utils/common";
 import { imageContentTypeFromPath, pathExists } from "@main/utils/file";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import type { PersonSyncResult } from "@mdcz/shared/ipcTypes";
 
 export type PersonSyncBatchOutcome = "processed" | "skipped";

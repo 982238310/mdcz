@@ -1,7 +1,7 @@
-import { DahliaCrawler } from "@main/services/crawler/sites/dahlia";
-import { FalenoCrawler } from "@main/services/crawler/sites/faleno";
-import { Fc2Crawler } from "@main/services/crawler/sites/fc2";
-import { PrestigeCrawler } from "@main/services/crawler/sites/prestige";
+import { DahliaCrawler } from "@mdcz/runtime/crawler/sites/dahlia";
+import { FalenoCrawler } from "@mdcz/runtime/crawler/sites/faleno";
+import { Fc2Crawler } from "@mdcz/runtime/crawler/sites/fc2";
+import { PrestigeCrawler } from "@mdcz/runtime/crawler/sites/prestige";
 import { Website } from "@mdcz/shared/enums";
 import type { CrawlerData } from "@mdcz/shared/types";
 import { describe, expect, it } from "vitest";

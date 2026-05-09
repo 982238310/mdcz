@@ -6,13 +6,13 @@ import {
   createImageHostCooldownStore,
   type PersistentCooldownStore,
 } from "@main/services/cooldown/PersistentCooldownStore";
-import type { CrawlerProvider } from "@main/services/crawler";
 import { loggerService } from "@main/services/LoggerService";
-import type { NetworkClient } from "@main/services/network";
 import type { SignalService } from "@main/services/SignalService";
 import { didPromiseTimeout } from "@main/utils/async";
 import { createMediaRoot, type MediaRoot } from "@mdcz/media-store";
+import type { CrawlerProvider } from "@mdcz/runtime/crawler";
 import { createIdleMaintenanceStatus, MaintenanceExecutor, type MaintenanceRuntime } from "@mdcz/runtime/maintenance";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import type {
   LocalScanEntry,
   MaintenanceCommitItem,

@@ -1,4 +1,4 @@
-import { R18DevCrawler } from "@main/services/crawler/sites/r18";
+import { R18DevCrawler } from "@mdcz/runtime/crawler/sites/r18";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

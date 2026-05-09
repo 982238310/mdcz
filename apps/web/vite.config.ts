@@ -36,24 +36,11 @@ const manualChunk = (id: string): string | undefined => {
 export default defineConfig({
   resolve: {
     alias: [
-      { find: "@", replacement: workspaceResolve("apps/desktop/src/renderer/src") },
       { find: /^@mdcz\/shared$/, replacement: workspaceResolve("packages/shared/browser.ts") },
       { find: /^@mdcz\/shared\/(.+)$/, replacement: workspaceResolve("packages/shared/$1") },
       { find: /^@mdcz\/ui$/, replacement: workspaceResolve("packages/ui/src/index.ts") },
       { find: /^@mdcz\/views$/, replacement: workspaceResolve("packages/views/src/index.ts") },
-      { find: /^@mdcz\/views\/about$/, replacement: workspaceResolve("packages/views/src/about/index.ts") },
-      { find: /^@mdcz\/views\/common$/, replacement: workspaceResolve("packages/views/src/common/index.ts") },
-      { find: /^@mdcz\/views\/config-form$/, replacement: workspaceResolve("packages/views/src/config-form/index.ts") },
-      { find: /^@mdcz\/views\/detail$/, replacement: workspaceResolve("packages/views/src/detail/index.ts") },
-      { find: /^@mdcz\/views\/library$/, replacement: workspaceResolve("packages/views/src/library/index.ts") },
-      { find: /^@mdcz\/views\/logs$/, replacement: workspaceResolve("packages/views/src/logs/index.ts") },
-      { find: /^@mdcz\/views\/maintenance$/, replacement: workspaceResolve("packages/views/src/maintenance/index.ts") },
-      { find: /^@mdcz\/views\/nfo$/, replacement: workspaceResolve("packages/views/src/nfo/index.ts") },
-      { find: /^@mdcz\/views\/overview$/, replacement: workspaceResolve("packages/views/src/overview/index.ts") },
-      { find: /^@mdcz\/views\/scrape$/, replacement: workspaceResolve("packages/views/src/scrape/index.ts") },
-      { find: /^@mdcz\/views\/settings$/, replacement: workspaceResolve("packages/views/src/settings/index.ts") },
-      { find: /^@mdcz\/views\/tools$/, replacement: workspaceResolve("packages/views/src/tools/index.ts") },
-      { find: /^@mdcz\/views\/workbench$/, replacement: workspaceResolve("packages/views/src/workbench/index.ts") },
+      { find: /^@mdcz\/views\/(.+)$/, replacement: workspaceResolve("packages/views/src/$1") },
     ],
   },
   server: {

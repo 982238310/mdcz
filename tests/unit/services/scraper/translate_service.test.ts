@@ -1,5 +1,5 @@
 import { configurationSchema } from "@main/services/config";
-import { NetworkClient } from "@main/services/network";
+import { NetworkClient } from "@mdcz/runtime/network";
 import type { LlmApiClient } from "@mdcz/runtime/scrape";
 import { TranslateService } from "@mdcz/runtime/scrape";
 import { TranslateEngine, Website } from "@mdcz/shared/enums";

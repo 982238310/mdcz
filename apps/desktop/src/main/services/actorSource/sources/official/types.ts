@@ -1,4 +1,4 @@
-import type { NetworkClient } from "@main/services/network";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import type { ActorProfile } from "@mdcz/shared/types";
 import type { ActorSourceHint } from "../../types";
 

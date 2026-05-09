@@ -1,5 +1,4 @@
 import type { Configuration } from "@main/services/config";
-import type { NetworkClient } from "@main/services/network";
 import {
   buildEmbyHeaders,
   buildEmbyPersonUpdatePayload,
@@ -26,6 +25,7 @@ import {
   toStringValue,
   uploadEmbyPrimaryImage,
 } from "@mdcz/runtime/mediaserver";
+import type { NetworkClient } from "@mdcz/runtime/network";
 
 export type { EmbyBatchResult, EmbyMode, EmbyPerson };
 export { toStringArray, toStringRecord, toStringValue };

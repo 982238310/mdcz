@@ -4,7 +4,11 @@ import { join } from "node:path";
 import { defaultConfiguration } from "@mdcz/shared/config";
 import { serializeConfiguration } from "@mdcz/shared/configCodec";
 import { describe, expect, it } from "vitest";
-import { resolveServerRuntimePaths, ServerConfigService, type ServerConfigValidationError } from "./configService";
+import {
+  resolveServerRuntimePaths,
+  ServerConfigService,
+  type ServerConfigValidationError,
+} from "./services/configService";
 
 describe("resolveServerRuntimePaths", () => {
   it("uses XDG-style defaults on Linux", () => {

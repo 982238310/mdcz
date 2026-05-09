@@ -1,4 +1,4 @@
-import { SokmilCrawler } from "@main/services/crawler/sites/sokmil";
+import { SokmilCrawler } from "@mdcz/runtime/crawler/sites/sokmil";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

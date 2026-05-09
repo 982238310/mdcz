@@ -13,9 +13,9 @@ vi.mock("node:timers/promises", () => {
   };
 });
 
-import { CrawlerProvider } from "@main/services/crawler/CrawlerProvider";
-import { FetchGateway } from "@main/services/crawler/FetchGateway";
-import { NetworkClient } from "@main/services/network/NetworkClient";
+import { CrawlerProvider } from "@mdcz/runtime/crawler/CrawlerProvider";
+import { FetchGateway } from "@mdcz/runtime/crawler/FetchGateway";
+import { NetworkClient } from "@mdcz/runtime/network";
 
 const createProbeResponse = (
   body: Uint8Array,

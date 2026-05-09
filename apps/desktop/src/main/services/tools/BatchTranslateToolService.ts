@@ -1,7 +1,7 @@
 import type { Configuration } from "@main/services/config";
 import { loggerService } from "@main/services/LoggerService";
-import type { NetworkClient } from "@main/services/network";
 import { LocalScanService, writePreparedNfo } from "@mdcz/runtime/maintenance";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import { LlmApiClient, NfoGenerator } from "@mdcz/runtime/scrape";
 import {
   applyBatchNfoTranslations,

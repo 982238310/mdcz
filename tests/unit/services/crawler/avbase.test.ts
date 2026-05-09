@@ -1,4 +1,4 @@
-import { AvbaseCrawler } from "@main/services/crawler/sites/avbase";
+import { AvbaseCrawler } from "@mdcz/runtime/crawler/sites/avbase";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

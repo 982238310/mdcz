@@ -1,4 +1,4 @@
-import { PpvDatabankCrawler } from "@main/services/crawler/sites/ppvdatabank";
+import { PpvDatabankCrawler } from "@mdcz/runtime/crawler/sites/ppvdatabank";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

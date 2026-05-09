@@ -4,9 +4,9 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { defaultConfiguration } from "@mdcz/shared/config";
 import { describe, expect, it } from "vitest";
-import type { ServerConfigService } from "./configService";
-import type { MediaRootService } from "./mediaRootService";
-import { type ServerPathFs, ServerPathService } from "./serverPathService";
+import type { ServerConfigService } from "./services/configService";
+import type { MediaRootService } from "./services/mediaRootService";
+import { type ServerPathFs, ServerPathService } from "./services/serverPathService";
 
 const createFakeMediaRoots = (hostPath: string): MediaRootService =>
   ({

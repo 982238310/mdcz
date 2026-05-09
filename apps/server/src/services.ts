@@ -1,20 +1,20 @@
-import type { AuthService } from "./authService";
-import type { AutomationService, AutomationWebhookOptions } from "./automationService";
-import type { BrowserService } from "./browserService";
-import type { ServerConfigService } from "./configService";
-import type { DiagnosticsService } from "./diagnosticsService";
-import type { LibraryService } from "./libraryService";
-import type { MaintenanceService } from "./maintenanceService";
-import type { MediaRootService } from "./mediaRootService";
-import type { ServerPersistenceService } from "./persistenceService";
-import type { RuntimeActionService } from "./runtimeActionService";
-import type { RuntimeLogService } from "./runtimeLogService";
-import type { ScanQueueService } from "./scanQueueService";
-import type { ScrapeService } from "./scrapeService";
-import type { ServerPathService } from "./serverPathService";
-import type { SystemService } from "./systemService";
+import type { AuthService } from "./services/authService";
+import type { AutomationService, AutomationWebhookOptions } from "./services/automationService";
+import type { BrowserService } from "./services/browserService";
+import type { ServerConfigService } from "./services/configService";
+import type { DiagnosticsService } from "./services/diagnosticsService";
+import type { LibraryService } from "./services/libraryService";
+import type { MaintenanceService } from "./services/maintenanceService";
+import type { MediaRootService } from "./services/mediaRootService";
+import type { ServerPersistenceService } from "./services/persistenceService";
+import type { RuntimeActionService } from "./services/runtimeActionService";
+import type { RuntimeLogService } from "./services/runtimeLogService";
+import type { ScanQueueService } from "./services/scanQueueService";
+import type { ScrapeService } from "./services/scrapeService";
+import type { ServerPathService } from "./services/serverPathService";
+import type { SystemService } from "./services/systemService";
+import type { ToolsService } from "./services/toolsService";
 import type { TaskEventBus } from "./taskEvents";
-import type { ToolsService } from "./toolsService";
 
 export interface ServerServices {
   automation: AutomationService;

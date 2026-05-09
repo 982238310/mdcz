@@ -1,7 +1,7 @@
 import { loggerService } from "@main/services/LoggerService";
-import type { NetworkClient } from "@main/services/network";
 import type { SignalService } from "@main/services/SignalService";
 import { toErrorMessage } from "@main/utils/common";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import { app } from "electron";
 
 const GITHUB_REPO = "ShotHeadman/mdcz";

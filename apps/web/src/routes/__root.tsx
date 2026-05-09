@@ -1,24 +1,17 @@
 import { toErrorMessage } from "@mdcz/shared/error";
+import { AppShell, LogoutShellAction, type ShellLinkProps, ThemeProvider } from "@mdcz/views/shell";
 import { useQuery } from "@tanstack/react-query";
 import { createRootRoute, Outlet } from "@tanstack/react-router";
-import { LogOut } from "lucide-react";
-import { type AnchorHTMLAttributes, type ReactNode, useState } from "react";
+import { type ReactNode, useState } from "react";
 import { useForm } from "react-hook-form";
 import { api } from "../client";
-import { NAV_ITEMS } from "../navigation";
 import { ErrorBanner } from "../routeCommon";
-import { buildHref } from "../routeHelpers";
 import { Button, Form, FormControl, FormField, FormItem, FormLabel, FormMessage, PasswordInput } from "../ui";
 
 const PUBLIC_PATHS = new Set(["/setup", "/login"]);
 
-type AppLinkProps = AnchorHTMLAttributes<HTMLAnchorElement> & {
-  search?: Record<string, string | undefined>;
-  to: string;
-};
-
-const AppLink = ({ to, search, className, children, ...props }: AppLinkProps) => (
-  <a className={className} href={buildHref(to, search)} {...props}>
+const ShellLink = ({ to, className, onFocus, onMouseEnter, children }: ShellLinkProps) => (
+  <a className={className} href={to} onFocus={onFocus} onMouseEnter={onMouseEnter}>
     {children}
   </a>
 );
@@ -114,55 +107,23 @@ export const RootLayout = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <div className="flex h-dvh flex-col overflow-hidden bg-background">
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <aside className="flex w-[130px] shrink-0 flex-col bg-sidebar text-sidebar-foreground">
-          <div className="flex h-20 shrink-0 items-center gap-2 px-5">
-            <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-primary text-[11px] font-bold text-primary-foreground shadow-sm">
-              M
-            </div>
-            <span className="select-none text-lg font-semibold tracking-tight">MDCz</span>
-          </div>
-          <nav className="flex flex-1 flex-col gap-2 overflow-y-auto py-3">
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              const active = pathname === item.to;
-              return (
-                <AppLink
-                  className={`relative flex items-center gap-3 px-5 py-2 text-sm transition-colors ${
-                    active
-                      ? "font-bold text-foreground before:absolute before:left-1 before:bottom-2 before:top-2 before:w-0.5 before:rounded-full before:bg-foreground"
-                      : "font-medium text-muted-foreground hover:text-foreground"
-                  }`}
-                  key={item.to}
-                  to={item.to}
-                >
-                  <Icon className="h-5 w-5 shrink-0" strokeWidth={active ? 2.5 : 2} />
-                  <span className="truncate">{item.label}</span>
-                </AppLink>
-              );
-            })}
-          </nav>
-          <div className="border-t border-border/50 px-3 py-2">
-            <Button
-              className="w-full justify-start px-3"
-              variant="secondary"
-              onClick={() => {
-                void api.auth.logout().finally(() => {
-                  window.location.href = "/login";
-                });
-              }}
-            >
-              <LogOut className="h-4 w-4" />
-              退出登录
-            </Button>
-          </div>
-        </aside>
-        <main className="flex min-w-0 flex-1 flex-col overflow-hidden py-2 pl-2">
-          <div className="flex-1 overflow-hidden rounded-l-xl bg-surface">{children}</div>
-        </main>
-      </div>
-    </div>
+    <ThemeProvider>
+      <AppShell
+        currentPath={pathname}
+        linkComponent={ShellLink}
+        footerAction={
+          <LogoutShellAction
+            onLogout={() => {
+              void api.auth.logout().finally(() => {
+                window.location.href = "/login";
+              });
+            }}
+          />
+        }
+      >
+        {children}
+      </AppShell>
+    </ThemeProvider>
   );
 };
 

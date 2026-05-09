@@ -1,5 +1,6 @@
 import { toErrorMessage } from "@mdcz/shared/error";
 import { useSettingsSavingStore } from "@mdcz/shared/stores/settingsSavingStore";
+import { Button, Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle, Form } from "@mdcz/ui";
 import { ConfigFieldLayoutProvider } from "@mdcz/views/config-form";
 import {
   EmbySection,
@@ -8,9 +9,11 @@ import {
   mergeConfigWithFlatPayload,
   PersonSyncSharedSection,
   type SettingsCrawlerSiteInfo,
+  SettingsEditorAutosaveProvider,
   type SettingsNotifier,
   type SettingsServices,
   SettingsServicesProvider,
+  valuesEqual,
 } from "@mdcz/views/settings";
 import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo } from "react";
@@ -18,11 +21,7 @@ import type { FieldValues } from "react-hook-form";
 import { useForm } from "react-hook-form";
 import { toast } from "sonner";
 import { ipc } from "@/client/ipc";
-import { Button } from "@/components/ui/Button";
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/Dialog";
-import { Form } from "@/components/ui/Form";
-import { SettingsEditorAutosaveProvider, valuesEqual } from "@/hooks/useAutoSaveField";
-import { CURRENT_CONFIG_QUERY_KEY, useCurrentConfig } from "@/hooks/useCurrentConfig";
+import { CURRENT_CONFIG_QUERY_KEY, useCurrentConfig } from "@/hooks/configQueries";
 import { cn } from "@/lib/utils";
 
 export type PersonServer = "jellyfin" | "emby";

@@ -1,6 +1,7 @@
 import type { SystemAboutResponse } from "@mdcz/shared/serverDtos";
 import { Button, quietHeroRadiusClass, quietPanelRadiusClass } from "@mdcz/ui";
 import { Bug, ExternalLink, Github, Server, Sparkles } from "lucide-react";
+import AppLogo from "../assets/logo.png";
 
 export interface AboutViewProps {
   about?: SystemAboutResponse;
@@ -63,6 +64,7 @@ export const AboutView = ({
   onUpdateCheckChange,
 }: AboutViewProps) => {
   const homepage = about.homepage ?? about.repository ?? fallbackAbout.homepage;
+  const resolvedLogoSrc = logoSrc ?? AppLogo;
 
   return (
     <div className="h-full overflow-y-auto overflow-x-hidden bg-background/30 text-foreground selection:bg-primary/10">
@@ -75,8 +77,12 @@ export const AboutView = ({
               onClick={() => homepage && onOpenExternal(homepage)}
             >
               <div className="absolute inset-0 scale-125 rounded-full bg-primary/5 blur-2xl transition-colors group-hover:bg-primary/10" />
-              {logoSrc ? (
-                <img alt={about.productName} className={`relative h-20 w-20 ${quietHeroRadiusClass}`} src={logoSrc} />
+              {resolvedLogoSrc ? (
+                <img
+                  alt={about.productName}
+                  className={`relative h-20 w-20 ${quietHeroRadiusClass}`}
+                  src={resolvedLogoSrc}
+                />
               ) : (
                 <Server className="relative h-9 w-9 text-foreground" />
               )}

@@ -1,5 +1,15 @@
 import type { LogEntryDto } from "@mdcz/shared/serverDtos";
 import { useLogStore } from "@mdcz/shared/stores/logStore";
+import {
+  Button,
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@mdcz/ui";
 import { type LogsKindFilter, type LogsLevelFilter, LogsPanelView } from "@mdcz/views/logs";
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -10,16 +20,6 @@ import {
   getVisualLogLevelLabel,
   stringifyRuntimeLogMessage,
 } from "@/components/logviewer/logFormat";
-import { Button } from "@/components/ui/Button";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/Dialog";
 
 const toLogEntryLevel = (level: string): LogEntryDto["level"] => {
   if (level === "OK" || level === "WARN" || level === "ERR" || level === "REQ" || level === "INFO") {

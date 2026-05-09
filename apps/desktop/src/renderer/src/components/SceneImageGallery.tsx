@@ -1,6 +1,6 @@
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@mdcz/ui";
 import { ChevronLeft, ChevronRight, ImageIcon, X } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/Dialog";
 import { useResolvedImageSrc } from "@/hooks/useResolvedImageSources";
 
 interface SceneImageGalleryProps {

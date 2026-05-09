@@ -5,12 +5,12 @@ import { registerIpcHandlers } from "@main/ipc";
 import { registerLocalFileHandler, registerLocalFileScheme } from "@main/localFileProtocol";
 import { configManager } from "@main/services/config";
 import { loggerService } from "@main/services/LoggerService";
-import { NetworkClient } from "@main/services/network";
 import { ShortcutService } from "@main/services/ShortcutService";
 import { SignalService } from "@main/services/SignalService";
 import { TrayService } from "@main/services/TrayService";
 import { UpdateService } from "@main/services/UpdateService";
 import { type MainWindowCreationOptions, WindowService } from "@main/services/WindowService";
+import { NetworkClient } from "@mdcz/runtime/network";
 import { app, BrowserWindow } from "electron";
 
 const QUIT_FORCE_EXIT_TIMEOUT_MS = 3_000;

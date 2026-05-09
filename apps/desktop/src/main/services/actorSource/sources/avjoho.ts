@@ -1,10 +1,5 @@
 import type { Configuration } from "@main/services/config";
-import {
-  type CookieResolver,
-  InMemoryCookieJar,
-  type NetworkClient,
-  type NetworkSession,
-} from "@main/services/network";
+import type { CookieResolver } from "@main/services/network";
 import { normalizeActorName, toUniqueActorNames } from "@main/utils/actor";
 import {
   parseActorBloodType,
@@ -14,6 +9,7 @@ import {
 } from "@main/utils/actorProfile";
 import { buildUrl, toErrorMessage } from "@main/utils/common";
 import { normalizeText } from "@main/utils/normalization";
+import { InMemoryCookieJar, type NetworkClient, type NetworkSession } from "@mdcz/runtime/network";
 import { load } from "cheerio";
 import { mergeActorSourceHints } from "../sourceHints";
 import type { ActorLookupQuery, ActorSourceResult, BaseActorSource } from "../types";

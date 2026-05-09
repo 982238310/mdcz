@@ -10,11 +10,10 @@ import {
   OfficialActorSource,
 } from "@main/services/actorSource";
 import { createImageHostCooldownStore, PersistentCooldownStore } from "@main/services/cooldown/PersistentCooldownStore";
-import { CrawlerProvider, FetchGateway } from "@main/services/crawler";
-import { OutputLibraryScanner } from "@main/services/library";
+import { DesktopLibraryService, OutputLibraryScanner } from "@main/services/library";
 import { EmbyActorInfoService, EmbyActorPhotoService } from "@main/services/mediaServer/emby";
 import { JellyfinActorInfoService, JellyfinActorPhotoService } from "@main/services/mediaServer/jellyfin";
-import { createElectronCookieResolver, type NetworkClient } from "@main/services/network";
+import { createElectronCookieResolver } from "@main/services/network";
 import { DesktopPersistenceService } from "@main/services/persistence";
 import type { SignalService } from "@main/services/SignalService";
 import { ScraperService } from "@main/services/scraper";
@@ -22,6 +21,8 @@ import { AmazonJpImageService } from "@main/services/scraper/AmazonJpImageServic
 import { MaintenanceService } from "@main/services/scraper/maintenance/MaintenanceService";
 import { AmazonPosterToolService, BatchTranslateToolService, SymlinkService } from "@main/services/tools";
 import type { WindowService } from "@main/services/WindowService";
+import { CrawlerProvider, FetchGateway } from "@mdcz/runtime/crawler";
+import type { NetworkClient } from "@mdcz/runtime/network";
 
 export interface CreateContainerOptions {
   windowService: WindowService;
@@ -46,6 +47,7 @@ export const createContainer = ({
   const imageHostCooldownStore = createImageHostCooldownStore();
   const persistenceService = new DesktopPersistenceService();
   const outputLibraryScanner = new OutputLibraryScanner({ persistenceService });
+  const desktopLibraryService = new DesktopLibraryService(persistenceService);
   const amazonJpImageService = new AmazonJpImageService(networkClient);
   const actorImageService = new ActorImageService({ networkClient });
   const avjohoCookieResolver = createElectronCookieResolver({
@@ -86,6 +88,7 @@ export const createContainer = ({
     networkClient,
     fetchGateway,
     outputLibraryScanner,
+    desktopLibraryService,
     persistenceService,
     scraperService,
     maintenanceService,

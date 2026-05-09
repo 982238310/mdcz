@@ -1,8 +1,8 @@
 import type { Configuration } from "@main/services/config";
-import type { NetworkClient } from "@main/services/network";
 import { normalizeActorName } from "@main/utils/actor";
 import { CachedAsyncResolver } from "@main/utils/CachedAsyncResolver";
 import { toErrorMessage } from "@main/utils/common";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import type { ActorLookupQuery, ActorSourceResult, BaseActorSource } from "../types";
 
 interface GfriendsResponse {

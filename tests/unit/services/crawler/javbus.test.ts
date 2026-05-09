@@ -1,4 +1,4 @@
-import { JavbusCrawler } from "@main/services/crawler/sites/javbus";
+import { JavbusCrawler } from "@mdcz/runtime/crawler/sites/javbus";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

@@ -7,12 +7,10 @@
 
 import { Route as rootRouteImport } from "./routes/__root";
 import { Route as AboutRouteImport } from "./routes/about";
-import { Route as BrowserRouteImport } from "./routes/browser";
 import { Route as IndexRouteImport } from "./routes/index";
 import { Route as LibraryRouteImport } from "./routes/library";
 import { Route as LoginRouteImport } from "./routes/login";
 import { Route as LogsRouteImport } from "./routes/logs";
-import { Route as MediaRootsRouteImport } from "./routes/media-roots";
 import { Route as OverviewRouteImport } from "./routes/overview";
 import { Route as ScrapeResultIdRouteImport } from "./routes/scrape.$resultId";
 import { Route as SettingsRouteImport } from "./routes/settings";
@@ -30,11 +28,6 @@ const AboutRoute = AboutRouteImport.update({
   path: "/about",
   getParentRoute: () => rootRouteImport,
 } as any);
-const BrowserRoute = BrowserRouteImport.update({
-  id: "/browser",
-  path: "/browser",
-  getParentRoute: () => rootRouteImport,
-} as any);
 const LibraryRoute = LibraryRouteImport.update({
   id: "/library",
   path: "/library",
@@ -48,11 +41,6 @@ const LoginRoute = LoginRouteImport.update({
 const LogsRoute = LogsRouteImport.update({
   id: "/logs",
   path: "/logs",
-  getParentRoute: () => rootRouteImport,
-} as any);
-const MediaRootsRoute = MediaRootsRouteImport.update({
-  id: "/media-roots",
-  path: "/media-roots",
   getParentRoute: () => rootRouteImport,
 } as any);
 const OverviewRoute = OverviewRouteImport.update({
@@ -88,11 +76,9 @@ const WorkbenchRoute = WorkbenchRouteImport.update({
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute;
   AboutRoute: typeof AboutRoute;
-  BrowserRoute: typeof BrowserRoute;
   LibraryRoute: typeof LibraryRoute;
   LoginRoute: typeof LoginRoute;
   LogsRoute: typeof LogsRoute;
-  MediaRootsRoute: typeof MediaRootsRoute;
   OverviewRoute: typeof OverviewRoute;
   ScrapeResultIdRoute: typeof ScrapeResultIdRoute;
   SettingsRoute: typeof SettingsRoute;
@@ -104,11 +90,9 @@ export interface RootRouteChildren {
 export interface FileRoutesByFullPath {
   "/": typeof IndexRoute;
   "/about": typeof AboutRoute;
-  "/browser": typeof BrowserRoute;
   "/library": typeof LibraryRoute;
   "/login": typeof LoginRoute;
   "/logs": typeof LogsRoute;
-  "/media-roots": typeof MediaRootsRoute;
   "/overview": typeof OverviewRoute;
   "/scrape/$resultId": typeof ScrapeResultIdRoute;
   "/settings": typeof SettingsRoute;
@@ -120,11 +104,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   "/": typeof IndexRoute;
   "/about": typeof AboutRoute;
-  "/browser": typeof BrowserRoute;
   "/library": typeof LibraryRoute;
   "/login": typeof LoginRoute;
   "/logs": typeof LogsRoute;
-  "/media-roots": typeof MediaRootsRoute;
   "/overview": typeof OverviewRoute;
   "/scrape/$resultId": typeof ScrapeResultIdRoute;
   "/settings": typeof SettingsRoute;
@@ -137,11 +119,9 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport;
   "/": typeof IndexRoute;
   "/about": typeof AboutRoute;
-  "/browser": typeof BrowserRoute;
   "/library": typeof LibraryRoute;
   "/login": typeof LoginRoute;
   "/logs": typeof LogsRoute;
-  "/media-roots": typeof MediaRootsRoute;
   "/overview": typeof OverviewRoute;
   "/scrape/$resultId": typeof ScrapeResultIdRoute;
   "/settings": typeof SettingsRoute;
@@ -155,11 +135,9 @@ export interface FileRouteTypes {
   fullPaths:
     | "/"
     | "/about"
-    | "/browser"
     | "/library"
     | "/login"
     | "/logs"
-    | "/media-roots"
     | "/overview"
     | "/scrape/$resultId"
     | "/settings"
@@ -170,11 +148,9 @@ export interface FileRouteTypes {
   to:
     | "/"
     | "/about"
-    | "/browser"
     | "/library"
     | "/login"
     | "/logs"
-    | "/media-roots"
     | "/overview"
     | "/scrape/$resultId"
     | "/settings"
@@ -185,11 +161,9 @@ export interface FileRouteTypes {
     | "__root__"
     | "/"
     | "/about"
-    | "/browser"
     | "/library"
     | "/login"
     | "/logs"
-    | "/media-roots"
     | "/overview"
     | "/scrape/$resultId"
     | "/settings"
@@ -215,13 +189,6 @@ declare module "@tanstack/react-router" {
       preLoaderRoute: typeof AboutRouteImport;
       parentRoute: typeof rootRouteImport;
     };
-    "/browser": {
-      id: "/browser";
-      path: "/browser";
-      fullPath: "/browser";
-      preLoaderRoute: typeof BrowserRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
     "/library": {
       id: "/library";
       path: "/library";
@@ -241,13 +208,6 @@ declare module "@tanstack/react-router" {
       path: "/logs";
       fullPath: "/logs";
       preLoaderRoute: typeof LogsRouteImport;
-      parentRoute: typeof rootRouteImport;
-    };
-    "/media-roots": {
-      id: "/media-roots";
-      path: "/media-roots";
-      fullPath: "/media-roots";
-      preLoaderRoute: typeof MediaRootsRouteImport;
       parentRoute: typeof rootRouteImport;
     };
     "/overview": {
@@ -298,11 +258,9 @@ declare module "@tanstack/react-router" {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute,
   AboutRoute,
-  BrowserRoute,
   LibraryRoute,
   LoginRoute,
   LogsRoute,
-  MediaRootsRoute,
   OverviewRoute,
   ScrapeResultIdRoute,
   SettingsRoute,

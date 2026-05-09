@@ -19,6 +19,7 @@ import type {
   TranslateTestLlmInput,
   WatermarkDirectoryInfo,
 } from "@mdcz/shared/ipcTypes";
+import type { LibraryListInput, LibraryListResponse } from "@mdcz/shared/serverDtos";
 import type {
   CrawlerData,
   LocalScanEntry,
@@ -57,6 +58,9 @@ export const ipc = {
         items: OverviewRecentAcquisitionItem[];
       }>,
     getOutputSummary: () => client[IpcChannel.Overview_GetOutputSummary](undefined) as Promise<OverviewOutputSummary>,
+  },
+  library: {
+    list: (input?: LibraryListInput) => client[IpcChannel.Library_List](input) as Promise<LibraryListResponse>,
   },
   config: {
     get: (path?: string) => client[IpcChannel.Config_Get]({ path }),

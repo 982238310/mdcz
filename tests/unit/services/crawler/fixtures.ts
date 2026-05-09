@@ -1,6 +1,6 @@
-import type { AdapterDependencies } from "@main/services/crawler/base/types";
-import { FetchGateway } from "@main/services/crawler/FetchGateway";
-import { NetworkClient, type ProbeResult } from "@main/services/network";
+import type { AdapterDependencies } from "@mdcz/runtime/crawler/base/types";
+import { FetchGateway } from "@mdcz/runtime/crawler/FetchGateway";
+import { NetworkClient, type ProbeResult } from "@mdcz/runtime/network";
 
 type GetTextInit = Parameters<NetworkClient["getText"]>[1];
 

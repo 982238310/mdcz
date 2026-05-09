@@ -2,7 +2,7 @@ import {
   diffCrawlerData,
   diffCrawlerDataWithOptions,
   partitionCrawlerDataWithOptions,
-} from "@main/services/scraper/maintenance/diffCrawlerData";
+} from "@mdcz/runtime/maintenance";
 import { Website } from "@mdcz/shared/enums";
 import type { CrawlerData, LocalScanEntry } from "@mdcz/shared/types";
 import { describe, expect, it } from "vitest";

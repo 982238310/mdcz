@@ -1,4 +1,4 @@
-import { CrawlerProvider, FetchGateway } from "@main/services/crawler";
+import { CrawlerProvider, FetchGateway } from "@mdcz/runtime/crawler";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

@@ -1,6 +1,7 @@
 import type { ActorImageService } from "@main/services/ActorImageService";
 import type { ActorSourceProvider } from "@main/services/actorSource";
 import type { SignalService } from "@main/services/SignalService";
+import type { LocalScanService } from "@mdcz/runtime/maintenance";
 import type { TranslateService } from "@mdcz/runtime/scrape";
 import {
   type FileScrapeOptions,
@@ -10,7 +11,6 @@ import {
 } from "@mdcz/runtime/scrape";
 import type { AggregationService } from "./aggregation";
 import type { DownloadManager } from "./DownloadManager";
-import type { LocalScanService } from "./maintenance/LocalScanService";
 import type { NfoGenerator } from "./NfoGenerator";
 import { DefaultFileScraperPipeline } from "./pipeline";
 

@@ -1,5 +1,5 @@
-import type { NetworkClient, NetworkSession } from "@main/services/network";
 import { AmazonJpImageService } from "@main/services/scraper/AmazonJpImageService";
+import type { NetworkClient, NetworkSession } from "@mdcz/runtime/network";
 import { Website } from "@mdcz/shared/enums";
 import type { CrawlerData } from "@mdcz/shared/types";
 import { describe, expect, it, vi } from "vitest";

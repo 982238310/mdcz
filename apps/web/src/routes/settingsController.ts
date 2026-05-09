@@ -9,7 +9,6 @@ import {
 import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "../client";
-import { ipc } from "../client/ipc";
 import { CURRENT_CONFIG_QUERY_KEY } from "../hooks/configQueries";
 
 export const PROFILE_IMPORT_FILTERS: Array<{ name: string; extensions: string[] }> = [
@@ -20,13 +19,13 @@ export type ImportMode = "new" | "overwrite";
 
 export const createSettingsServices = (queryClient: QueryClient): SettingsServices => ({
   browsePath: async () => ({ canceled: true, paths: [] }),
-  checkCookies: ipc.network.checkCookies,
+  checkCookies: async () => await api.network.checkCookies(),
   decrementInFlightSaves: useSettingsSavingStore.getState().decrementInFlight,
-  ensureWatermarkDirectory: ipc.app.ensureWatermarkDirectory,
+  ensureWatermarkDirectory: async () => await api.app.ensureWatermarkDirectory(),
   getInFlightSaves: () => useSettingsSavingStore.getState().inFlight,
   incrementInFlightSaves: useSettingsSavingStore.getState().incrementInFlight,
   listCrawlerSites: async () => {
-    const result = await ipc.crawler.listSites();
+    const result = await api.crawler.listSites();
     return {
       sites: result.sites.filter(
         (site): site is SettingsCrawlerSiteInfo =>
@@ -39,12 +38,24 @@ export const createSettingsServices = (queryClient: QueryClient): SettingsServic
       ),
     };
   },
-  openWatermarkDirectory: ipc.app.openWatermarkDirectory,
-  previewNaming: ipc.config.previewNaming,
-  probeSiteConnectivity: ipc.crawler.probeSiteConnectivity,
-  relaunchApp: ipc.app.relaunch,
-  resetConfig: ipc.config.reset,
-  saveConfig: ipc.config.save,
+  openWatermarkDirectory: async () => {
+    const result = await api.app.ensureWatermarkDirectory();
+    if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(result.path);
+      return { copied: true, message: "已复制服务器角标图片目录路径。", path: result.path, unsupported: true };
+    }
+    return {
+      copied: false,
+      message: "浏览器无法打开服务器文件夹，请复制上方服务器路径。",
+      path: result.path,
+      unsupported: true,
+    };
+  },
+  previewNaming: async (config) => await api.config.previewNaming(config ?? {}),
+  probeSiteConnectivity: async (site) => await api.crawler.probeSiteConnectivity({ site }),
+  relaunchApp: async () => window.location.reload(),
+  resetConfig: async (path) => await api.config.reset(path ? { path } : undefined),
+  saveConfig: async (config) => await api.config.update(config ?? {}),
   suggestDirectoryPath: async (path) => {
     const result = await api.serverPaths.suggest({ path, intent: "settings" });
     return {
@@ -56,7 +67,7 @@ export const createSettingsServices = (queryClient: QueryClient): SettingsServic
   isServer: true,
   subscribeInFlightSaves: useSettingsSavingStore.subscribe,
   watermarkDirectoryActionLabel: "复制服务器路径",
-  testLLM: ipc.translate.testLLM,
+  testLLM: async (input) => await api.translate.testLlm(input),
   updateCurrentConfigCache: (flatPayload: Record<string, unknown>) => {
     queryClient.setQueryData(CURRENT_CONFIG_QUERY_KEY, (previous) => {
       if (typeof previous !== "object" || previous === null || Array.isArray(previous)) {

@@ -1,5 +1,5 @@
-import { Jav321Crawler } from "@main/services/crawler/sites/jav321";
-import type { NetworkClient } from "@main/services/network";
+import { Jav321Crawler } from "@mdcz/runtime/crawler/sites/jav321";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

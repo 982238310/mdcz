@@ -1,4 +1,4 @@
-import { MGStageCrawler } from "@main/services/crawler/sites/mgstage";
+import { MGStageCrawler } from "@mdcz/runtime/crawler/sites/mgstage";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

@@ -1,6 +1,6 @@
 import { toErrorMessage } from "@mdcz/shared/error";
+import { Button } from "@mdcz/ui";
 import { AlertTriangle, RefreshCw, RotateCcw } from "lucide-react";
-import { Button } from "@/components/ui/Button";
 
 export default function CrashFallback({ error, onRetry }: { error?: unknown; onRetry?: () => void }) {
   const message = toErrorMessage(error, "未知错误");

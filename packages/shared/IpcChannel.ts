@@ -59,6 +59,8 @@ export enum IpcChannel {
   Overview_GetRecentAcquisitions = "overview:get-recent-acquisitions",
   Overview_GetOutputSummary = "overview:get-output-summary",
 
+  Library_List = "library:list",
+
   Tool_JellyfinActorPhotoSync = "tool:jellyfin-actor-photo-sync",
   Tool_JellyfinActorInfoSync = "tool:jellyfin-actor-info-sync",
   Tool_JellyfinServerCheckConnection = "tool:jellyfin-server-check-connection",

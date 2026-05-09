@@ -1,6 +1,6 @@
-import { FetchGateway } from "@main/services/crawler/FetchGateway";
-import { BaseFc2Crawler } from "@main/services/crawler/sites/BaseFc2Crawler";
-import { NetworkClient } from "@main/services/network";
+import { FetchGateway } from "@mdcz/runtime/crawler/FetchGateway";
+import { BaseFc2Crawler } from "@mdcz/runtime/crawler/sites/BaseFc2Crawler";
+import { NetworkClient } from "@mdcz/runtime/network";
 import { Website } from "@mdcz/shared/enums";
 import type { CrawlerData } from "@mdcz/shared/types";
 import { describe, expect, it } from "vitest";

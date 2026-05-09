@@ -7,5 +7,6 @@ export * from "./nfo";
 export * from "./overview";
 export * from "./path";
 export * from "./scrape";
+export * from "./shell";
 export * from "./tools";
 export * from "./workbench";

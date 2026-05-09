@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { deleteFile, deleteFileAndFolder, retryScrapeSelection, startSelectedScrape, stopScrape } from "@/api/manual";
 import { ipc } from "@/client/ipc";
 import type { ConfigOutput } from "@/client/types";
-import { CURRENT_CONFIG_QUERY_KEY } from "@/hooks/useCurrentConfig";
+import { CURRENT_CONFIG_QUERY_KEY } from "@/hooks/configQueries";
 import { buildScrapeResultGroupActionContext, findScrapeResultGroup } from "@/lib/scrapeResultGrouping";
 import { playMediaPath } from "@/utils/playback";
 

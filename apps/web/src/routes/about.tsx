@@ -1,7 +1,6 @@
 import { AboutView } from "@mdcz/views/about";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
-import AppLogo from "@/assets/images/logo.png";
 import { api } from "../client";
 
 export const AboutPage = () => {
@@ -10,7 +9,6 @@ export const AboutPage = () => {
   return (
     <AboutView
       about={aboutQ.data}
-      logoSrc={AppLogo}
       loading={aboutQ.isLoading}
       updateCheck={false}
       onOpenExternal={(url) => window.open(url, "_blank", "noopener,noreferrer")}

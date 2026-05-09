@@ -1,6 +1,6 @@
 import type { Configuration } from "@mdcz/shared/config";
 import { queryOptions, type UseQueryOptions, useQuery } from "@tanstack/react-query";
-import { ipc } from "../client/ipc";
+import { api } from "../client";
 
 export interface ConfigProfilesOutput {
   profiles: string[];
@@ -15,7 +15,7 @@ export const currentConfigQueryOptions = () =>
   queryOptions({
     queryKey: CURRENT_CONFIG_QUERY_KEY,
     staleTime: 30_000,
-    queryFn: async () => (await ipc.config.get()) as Configuration,
+    queryFn: async () => await api.config.read(),
   });
 
 export const defaultConfigQueryOptions = () =>
@@ -23,14 +23,14 @@ export const defaultConfigQueryOptions = () =>
     queryKey: DEFAULT_CONFIG_QUERY_KEY,
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
-    queryFn: async () => (await ipc.config.getDefaults()) as Configuration,
+    queryFn: async () => await api.config.defaults(),
   });
 
 export const configProfilesQueryOptions = () =>
   queryOptions({
     queryKey: CONFIG_PROFILES_QUERY_KEY,
     staleTime: 30_000,
-    queryFn: async () => (await ipc.config.listProfiles()) as ConfigProfilesOutput,
+    queryFn: async () => await api.config.profiles.list(),
   });
 
 type CurrentConfigQueryOptions = Omit<

@@ -4,6 +4,7 @@ import { createAppHandlers } from "./handlers/app";
 import { createConfigHandlers } from "./handlers/config";
 import { createCrawlerHandlers } from "./handlers/crawler";
 import { createFileHandlers } from "./handlers/file";
+import { createLibraryHandlers } from "./handlers/library";
 import { createMaintenanceHandlers } from "./handlers/maintenance";
 import { createNetworkHandlers } from "./handlers/network";
 import { createOverviewHandlers } from "./handlers/overview";
@@ -17,6 +18,7 @@ export const createIpcRouter = (context: ServiceContainer): IpcRouterContract =>
   ...createScraperHandlers(context),
   ...createCrawlerHandlers(context),
   ...createOverviewHandlers(context),
+  ...createLibraryHandlers(context),
   ...createNetworkHandlers(context),
   ...createFileHandlers(context),
   ...createToolHandlers(context),

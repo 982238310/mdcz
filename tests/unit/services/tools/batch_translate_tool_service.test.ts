@@ -1,7 +1,7 @@
 import { resolve } from "node:path";
 import { configurationSchema, defaultConfiguration } from "@main/services/config";
-import type { NetworkClient } from "@main/services/network";
 import { BatchTranslateToolService } from "@main/services/tools/BatchTranslateToolService";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import type { LlmApiClient } from "@mdcz/runtime/scrape";
 import { Website } from "@mdcz/shared/enums";
 import type { BatchTranslateScanItem } from "@mdcz/shared/ipcTypes";

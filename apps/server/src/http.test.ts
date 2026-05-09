@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { createHealthPayload } from "./http";
+import { createHealthPayload } from "./http/health";
 
 const expectedHealthPayload = {
   service: "mdcz-server",

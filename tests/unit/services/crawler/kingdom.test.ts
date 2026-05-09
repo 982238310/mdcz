@@ -1,4 +1,4 @@
-import { KingdomCrawler } from "@main/services/crawler/sites/kingdom";
+import { KingdomCrawler } from "@mdcz/runtime/crawler/sites/kingdom";
 import { Website } from "@mdcz/shared/enums";
 import { describe, expect, it } from "vitest";
 

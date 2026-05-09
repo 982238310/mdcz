@@ -27,7 +27,7 @@ import { pauseScrape, resumeScrape, retryScrapeSelection, startSelectedScrape, s
 import { ipc } from "@/client/ipc";
 import { isMediaDirectorySelectionCancelled } from "@/client/mediaPath";
 import WorkbenchSetup from "@/components/workbench/WorkbenchSetup";
-import { CURRENT_CONFIG_QUERY_KEY, useCurrentConfig } from "@/hooks/useCurrentConfig";
+import { CURRENT_CONFIG_QUERY_KEY, useCurrentConfig } from "@/hooks/configQueries";
 
 export const Route = createFileRoute("/workbench")({
   validateSearch: (search): { intent?: "maintenance" } => ({

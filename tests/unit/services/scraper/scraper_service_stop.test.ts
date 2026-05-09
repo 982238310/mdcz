@@ -2,15 +2,15 @@ import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { configManager, configurationSchema, defaultConfiguration } from "@main/services/config";
-import { CrawlerProvider, FetchGateway } from "@main/services/crawler";
 import type { OutputLibraryScanner } from "@main/services/library";
-import { NetworkClient } from "@main/services/network";
 import type { DesktopPersistenceService } from "@main/services/persistence";
 import { SignalService } from "@main/services/SignalService";
 import { createAbortError } from "@main/services/scraper/abort";
 import { AggregationService } from "@main/services/scraper/aggregation";
 import { FileScraper } from "@main/services/scraper/FileScraper";
 import { ScraperService } from "@main/services/scraper/ScraperService";
+import { CrawlerProvider, FetchGateway } from "@mdcz/runtime/crawler";
+import { NetworkClient } from "@mdcz/runtime/network";
 import type { ScrapeResult } from "@mdcz/shared/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
 

@@ -9,8 +9,8 @@ import {
   LocalActorSource,
 } from "@main/services/actorSource";
 import { configurationSchema, defaultConfiguration } from "@main/services/config";
-import type { NetworkClient } from "@main/services/network";
 import { NfoGenerator } from "@main/services/scraper/NfoGenerator";
+import type { NetworkClient } from "@mdcz/runtime/network";
 import { Website } from "@mdcz/shared/enums";
 import type { CrawlerData } from "@mdcz/shared/types";
 import { afterEach, describe, expect, it, vi } from "vitest";
