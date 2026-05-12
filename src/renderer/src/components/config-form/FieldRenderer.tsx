@@ -25,6 +25,7 @@ import { BufferedFieldControl, parseBufferedNumberValue } from "./BufferedFieldC
 import { ChipArrayField, type ChipArrayOption } from "./ChipArrayField";
 import { DurationField } from "./DurationField";
 import { OrderedSiteField } from "./OrderedSiteField";
+import { PathArrayField } from "./PathArrayField";
 import { ServerPathField } from "./ServerPathField";
 
 // ── Centralized Base Field ──
@@ -478,6 +479,22 @@ export function PathFieldWrapper({
           <ServerPathField field={field} isDirectory={isDirectory} />
         </div>
       )}
+    </BaseField>
+  );
+}
+
+export function PathArrayFieldWrapper({
+  name,
+  label,
+  description,
+}: {
+  name: string;
+  label: string;
+  description?: string;
+}) {
+  return (
+    <BaseField name={name} label={label} description={description} layout="vertical" commitMode="immediate">
+      {(field) => <PathArrayField field={field} />}
     </BaseField>
   );
 }

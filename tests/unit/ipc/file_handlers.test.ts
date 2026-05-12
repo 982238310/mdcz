@@ -125,7 +125,7 @@ describe("createFileHandlers", () => {
 
     const handlers = createFileHandlers(createContext());
     const result = await handlers[IpcChannel.File_ListMediaCandidates].action(
-      actionArgs({ dirPath: root, excludeDirPath: outputDir }),
+      actionArgs({ dirPath: root, excludeDirPaths: [outputDir] }),
     );
 
     expect(result.candidates).toHaveLength(1);
@@ -137,7 +137,7 @@ describe("createFileHandlers", () => {
     );
   });
 
-  it("does not exclude the entire scan root when excludeDirPath matches the root", async () => {
+  it("does not exclude the entire scan root when excludeDirPaths matches the root", async () => {
     const root = await createTempDir();
     const videoPath = join(root, "ABC-123.mp4");
 
@@ -145,7 +145,7 @@ describe("createFileHandlers", () => {
 
     const handlers = createFileHandlers(createContext());
     const result = await handlers[IpcChannel.File_ListMediaCandidates].action(
-      actionArgs({ dirPath: root, excludeDirPath: root }),
+      actionArgs({ dirPath: root, excludeDirPaths: [root] }),
     );
 
     expect(result.candidates).toHaveLength(1);

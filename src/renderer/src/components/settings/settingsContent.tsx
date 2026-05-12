@@ -33,6 +33,7 @@ import {
   EnumField,
   type EnumOption,
   NumberField,
+  PathArrayFieldWrapper,
   PathFieldWrapper,
   PromptFieldWrapper,
   SecretField,
@@ -300,6 +301,7 @@ export function PathsSection() {
       <PathFieldWrapper name="paths.softlinkPath" label="软链接目录" isDirectory />
       <PathFieldWrapper name="paths.successOutputFolder" label="成功输出目录" isDirectory />
       <PathFieldWrapper name="paths.failedOutputFolder" label="失败输出目录" isDirectory />
+      <PathArrayFieldWrapper name="paths.defaultScanExcludeDirs" label="排除目录" />
       <PathFieldWrapper
         name="paths.outputSummaryPath"
         label="概览统计目录"

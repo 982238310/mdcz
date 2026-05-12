@@ -19,6 +19,7 @@ const createConfig = (overrides?: Partial<ConfigOutput>): ConfigOutput =>
       mediaPath: rootDir,
       successOutputFolder: "JAV_output",
       failedOutputFolder: "failed",
+      defaultScanExcludeDirs: ["JAV_output", "failed"],
       softlinkPath: softlinkDir,
       outputSummaryPath: "",
     },
@@ -60,9 +61,29 @@ describe("workbench setup contract", () => {
   it("plans normal scrape scans from configured paths and excludes output folders", () => {
     const plan = resolveMediaCandidateScanPlan("scrape", rootDir, successDir, createConfig());
 
-    expect(plan.excludeDirPath).toBe(successDir);
-    expect(plan.filterDirPaths).toEqual([successDir, failedDir]);
+    expect(plan.excludeDirPaths).toEqual([successDir, failedDir]);
     expect(plan.extraScanDirs).toEqual([softlinkDir]);
+  });
+
+  it("dedupes overlapping target and configured exclude directories", () => {
+    const plan = resolveMediaCandidateScanPlan(
+      "scrape",
+      rootDir,
+      successDir,
+      createConfig({
+        paths: {
+          mediaPath: rootDir,
+          successOutputFolder: "JAV_output",
+          failedOutputFolder: "failed",
+          softlinkPath: softlinkDir,
+          outputSummaryPath: "",
+          defaultScanExcludeDirs: ["JAV_output", "failed", "thumbnails"],
+        },
+      } as Partial<ConfigOutput>),
+    );
+
+    const thumbnailsDir = process.platform === "win32" ? "D:\\media\\thumbnails" : "/media/thumbnails";
+    expect(plan.excludeDirPaths).toEqual([successDir, failedDir, thumbnailsDir]);
   });
 
   it("filters output-folder candidates and dedupes merged scan roots", () => {

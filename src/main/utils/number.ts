@@ -110,7 +110,7 @@ const normalizePartProbeName = (rawName: string, escapeStrings: string[] = []): 
 
 const normalizeNumber = (value: string): string => {
   return value
-    .replace(/FC-/u, "FC2-")
+    .replace(/^FC-/u, "FC2-")
     .replace(/--+/gu, "-")
     .replace(/^[-_.\s]+|[-_.\s]+$/gu, "");
 };
@@ -134,7 +134,7 @@ export const extractNumber = (fileName: string, escapeStrings: string[] = []): s
     /(MKY-[A-Z]+-\d{3,})/iu,
     /([A-Z]{2,})00(\d{3})/iu,
     /(\d{2,}[A-Z]{2,}-\d{2,}[A-Z]?)/iu,
-    /([A-Z]{2,}-\d{2,}[A-Z]?)/iu,
+    /((?=[A-Z0-9]*[A-Z])[A-Z0-9]{2,}-\d{2,}[A-Z]?)/iu,
     /([A-Z]+-[A-Z]\d+)/iu,
     /(\d{2,}[-_]\d{2,})/iu,
     /(\d{3,}-[A-Z]{3,})/iu,
