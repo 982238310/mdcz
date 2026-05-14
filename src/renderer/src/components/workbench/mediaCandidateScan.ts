@@ -4,8 +4,7 @@ import type { ConfigOutput } from "@/client/types";
 export type WorkbenchSetupMode = "scrape" | "maintenance";
 
 interface MediaCandidateScanPlan {
-  excludeDirPath?: string;
-  filterDirPaths: string[];
+  excludeDirPaths: string[];
   extraScanDirs: string[];
   scanKey: string;
 }
@@ -26,6 +25,19 @@ const resolveConfiguredDir = (scanDir: string, configuredPath: string | undefine
   return isAbsolutePath(trimmedPath) || !scanDir.trim() ? trimmedPath : joinPath(scanDir, trimmedPath);
 };
 
+const resolveConfiguredDirs = (scanDir: string, configuredPaths: readonly string[] | undefined): string[] => {
+  const outputs: string[] = [];
+
+  for (const configuredPath of configuredPaths ?? []) {
+    const resolvedPath = resolveConfiguredDir(scanDir, configuredPath);
+    if (resolvedPath) {
+      outputs.push(resolvedPath);
+    }
+  }
+
+  return outputs;
+};
+
 const usesWindowsPathSemantics = (rawPath: string, normalizedPath: string): boolean =>
   /^[A-Za-z]:\//u.test(normalizedPath) || rawPath.includes("\\");
 
@@ -43,38 +55,50 @@ const isPathWithinDirectory = (filePath: string, directoryPath: string): boolean
   return normalizedFilePath === normalizedDirectoryPath || normalizedFilePath.startsWith(`${normalizedDirectoryPath}/`);
 };
 
+const dedupePathsByComparableKey = (paths: ReadonlyArray<string | undefined>): string[] => {
+  const seen = new Set<string>();
+  const outputs: string[] = [];
+  for (const path of paths) {
+    const trimmed = path?.trim();
+    if (!trimmed) {
+      continue;
+    }
+    const key = normalizeComparablePath(trimmed);
+    if (seen.has(key)) {
+      continue;
+    }
+    seen.add(key);
+    outputs.push(trimmed);
+  }
+  return outputs;
+};
+
 export const resolveMediaCandidateScanPlan = (
   mode: WorkbenchSetupMode,
   scanDir: string,
-  targetDir: string | undefined,
+  _targetDir: string | undefined,
   config?: ConfigOutput,
 ): MediaCandidateScanPlan => {
-  const excludeDirPath = mode === "scrape" ? targetDir?.trim() || undefined : undefined;
   if (mode !== "scrape") {
-    return {
-      excludeDirPath,
-      filterDirPaths: excludeDirPath ? [excludeDirPath] : [],
-      extraScanDirs: [],
-      scanKey: excludeDirPath ?? "",
-    };
+    return { excludeDirPaths: [], extraScanDirs: [], scanKey: "" };
   }
 
-  const failedDirPath = resolveConfiguredDir(scanDir, config?.paths?.failedOutputFolder);
+  const defaultExcludeDirPaths = resolveConfiguredDirs(scanDir, config?.paths?.defaultScanExcludeDirs);
   const softlinkDirPath =
     config?.behavior?.scrapeSoftlinkPath && scanDir.trim()
       ? resolveConfiguredDir(scanDir, config?.paths?.softlinkPath)
       : undefined;
-  const filterDirPaths = [excludeDirPath, failedDirPath].filter((path): path is string => Boolean(path?.trim()));
+
+  const excludeDirPaths = dedupePathsByComparableKey(defaultExcludeDirPaths);
   const extraScanDirs =
     softlinkDirPath && normalizeComparablePath(softlinkDirPath) !== normalizeComparablePath(scanDir)
       ? [softlinkDirPath]
       : [];
 
   return {
-    excludeDirPath,
-    filterDirPaths,
+    excludeDirPaths,
     extraScanDirs,
-    scanKey: [...filterDirPaths, ...extraScanDirs].map(normalizeComparablePath).join("|"),
+    scanKey: [...excludeDirPaths, ...extraScanDirs].map(normalizeComparablePath).join("|"),
   };
 };
 

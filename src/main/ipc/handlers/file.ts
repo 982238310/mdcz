@@ -105,7 +105,7 @@ export const createFileHandlers = (
         }
       },
     ),
-    [IpcChannel.File_ListMediaCandidates]: t.procedure.input<{ dirPath?: string; excludeDirPath?: string }>().action(
+    [IpcChannel.File_ListMediaCandidates]: t.procedure.input<{ dirPath?: string; excludeDirPaths?: string[] }>().action(
       async ({
         input,
       }): Promise<{
@@ -114,7 +114,8 @@ export const createFileHandlers = (
       }> => {
         try {
           const dirPath = input?.dirPath?.trim();
-          const excludeDirPath = input?.excludeDirPath?.trim();
+          const excludeDirPaths =
+            input?.excludeDirPaths?.map((path) => path.trim()).filter((path): path is string => Boolean(path)) ?? [];
           if (!dirPath) {
             throw createIpcError(IpcErrorCode.DIRECTORY_NOT_FOUND, "Directory path is required");
           }
@@ -126,7 +127,7 @@ export const createFileHandlers = (
             true,
             DEFAULT_VIDEO_EXTENSIONS,
             undefined,
-            excludeDirPath ? [excludeDirPath] : [],
+            excludeDirPaths,
           );
           const uniquePaths = [...new Set(discoveredPaths.filter((filePath) => !isGeneratedSidecarVideo(filePath)))];
           const candidates: MediaCandidate[] = [];

@@ -242,12 +242,12 @@ export default function WorkbenchSetup({
 
       try {
         const [primaryResult, ...extraResults] = await Promise.all([
-          ipc.file.listMediaCandidates(trimmedDir, scanPlan.excludeDirPath),
-          ...scanPlan.extraScanDirs.map((dirPath) => ipc.file.listMediaCandidates(dirPath)),
+          ipc.file.listMediaCandidates(trimmedDir, scanPlan.excludeDirPaths),
+          ...scanPlan.extraScanDirs.map((dirPath) => ipc.file.listMediaCandidates(dirPath, scanPlan.excludeDirPaths)),
         ]);
         const candidates = mergeMediaCandidates(
-          filterMediaCandidates(primaryResult.candidates, scanPlan.filterDirPaths),
-          ...extraResults.map((result) => filterMediaCandidates(result.candidates, scanPlan.filterDirPaths)),
+          filterMediaCandidates(primaryResult.candidates, scanPlan.excludeDirPaths),
+          ...extraResults.map((result) => filterMediaCandidates(result.candidates, scanPlan.excludeDirPaths)),
         );
         const supportedExtensions = [
           ...new Set(
