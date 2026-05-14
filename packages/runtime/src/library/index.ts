@@ -45,6 +45,7 @@ export interface RuntimeLibraryEntrySummaryInput {
   thumbnailPath?: string | null;
   lastKnownPath: string | null;
   createdAt: Date | number | string;
+  hiddenFromRecentAt?: Date | number | string | null;
   size?: number;
   available?: boolean | null;
 }
@@ -184,6 +185,30 @@ export const toRuntimeRecentAcquisition = (entry: RuntimeLibraryEntrySummaryInpu
   };
 };
 
+export const isVisibleRecentLibraryEntry = (
+  entry: Pick<RuntimeLibraryEntrySummaryInput, "hiddenFromRecentAt">,
+): boolean =>
+  entry.hiddenFromRecentAt === null || entry.hiddenFromRecentAt === undefined || entry.hiddenFromRecentAt === "";
+
+export const createRecentAcquisitionsFromEntries = (
+  entries: readonly RuntimeLibraryEntrySummaryInput[],
+  limit = 50,
+): RuntimeRecentAcquisition[] =>
+  sortAndLimitRecentAcquisitions(
+    entries
+      .filter(isVisibleRecentLibraryEntry)
+      .map((entry) => toRuntimeRecentAcquisition(entry))
+      .filter((entry): entry is RuntimeRecentAcquisition => entry !== null),
+    limit,
+  );
+
+export const getLatestLibraryEntryTimestamp = (
+  entries: readonly Pick<RuntimeLibraryEntrySummaryInput, "createdAt">[],
+): number | null => {
+  const latest = entries.reduce((max, entry) => Math.max(max, toTimestampMs(entry.createdAt)), 0);
+  return latest > 0 ? latest : null;
+};
+
 export const createRuntimeLibraryOverview = (input: {
   entries: readonly RuntimeLibraryEntrySummaryInput[];
   latestOutput?: RuntimeScrapeOutputSummaryInput | null;
@@ -192,12 +217,7 @@ export const createRuntimeLibraryOverview = (input: {
   rootPath?: string | null;
 }): RuntimeLibraryOverview => {
   const now = input.now ?? Date.now();
-  const recentAcquisitions = sortAndLimitRecentAcquisitions(
-    input.entries
-      .map((entry) => toRuntimeRecentAcquisition(entry))
-      .filter((entry): entry is RuntimeRecentAcquisition => entry !== null),
-    input.recentLimit,
-  );
+  const recentAcquisitions = createRecentAcquisitionsFromEntries(input.entries, input.recentLimit);
   const output = input.latestOutput
     ? createOutputLibrarySummaryFromScrapeOutput(input.latestOutput, now)
     : createOutputLibrarySummaryFromEntries(input.entries, now, input.rootPath ?? null);

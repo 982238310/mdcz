@@ -771,6 +771,73 @@ describe("buildServer", () => {
     expect(updateResponse.statusCode).toBe(404);
   });
 
+  it("builds overview fallback output from library entries independently of recent visibility", async () => {
+    const root = await mkdtemp(join(tmpdir(), "mdcz-overview-root-"));
+    await writeFile(join(root, "visible.mp4"), "visible");
+    await writeFile(join(root, "hidden.mp4"), "hidden entry bytes");
+    const { fastify, services } = await createTestServer();
+    const loginResponse = await fastify.inject({
+      method: "POST",
+      url: "/trpc/auth.login",
+      payload: { password: "admin" },
+    });
+    const token = loginResponse.json().result.data.token;
+    const rootId = await syncMediaRootFromConfig(fastify, token, root);
+    const state = await services.persistence.getState();
+    await state.repositories.library.upsertEntry({
+      id: "visible-entry",
+      rootId,
+      rootRelativePath: "visible.mp4",
+      size: 7,
+      title: null,
+      number: "ABC-002",
+      createdAt: new Date("2026-05-11T00:00:00.000Z"),
+    });
+    const hidden = await state.repositories.library.upsertEntry({
+      id: "hidden-entry",
+      rootId,
+      rootRelativePath: "hidden.mp4",
+      size: 18,
+      title: "Hidden",
+      number: "ABC-001",
+      createdAt: new Date("2026-05-10T00:00:00.000Z"),
+    });
+    await state.repositories.library.hideFromRecent(hidden.id, new Date("2026-05-12T00:00:00.000Z"));
+    for (let index = 0; index < 8; index += 1) {
+      await state.repositories.library.upsertEntry({
+        id: `newer-entry-${index}`,
+        rootId,
+        rootRelativePath: `newer-${index}.mp4`,
+        size: 1,
+        title: `Newer ${index}`,
+        number: `ABC-10${index}`,
+        createdAt: new Date(`2026-05-11T00:0${index + 1}:00.000Z`),
+      });
+    }
+
+    const overviewResponse = await fastify.inject({
+      method: "GET",
+      url: "/trpc/overview.summary",
+      headers: { authorization: `Bearer ${token}` },
+    });
+
+    expect(overviewResponse.statusCode).toBe(200);
+    expect(overviewResponse.json().result.data.output).toEqual({
+      fileCount: 10,
+      totalBytes: 33,
+      outputAt: "2026-05-11T00:08:00.000Z",
+      rootPath: null,
+    });
+    const recentAcquisitions = overviewResponse.json().result.data.recentAcquisitions;
+    expect(recentAcquisitions).toHaveLength(8);
+    expect(recentAcquisitions[0]).toMatchObject({
+      id: "newer-entry-7",
+      number: "ABC-107",
+      completedAt: "2026-05-11T00:08:00.000Z",
+    });
+    expect(recentAcquisitions.map((entry: { id: string }) => entry.id)).not.toContain("hidden-entry");
+  });
+
   it("rejects root browser escape attempts", async () => {
     const root = await mkdtemp(join(tmpdir(), "mdcz-browser-root-"));
     const { fastify } = await createTestServer();

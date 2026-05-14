@@ -1,3 +1,9 @@
+import {
+  type DesktopRouteDefinition,
+  type DesktopRouteId,
+  PRIMARY_DESKTOP_ROUTES,
+  SYSTEM_DESKTOP_ROUTES,
+} from "@mdcz/shared/desktopNavigation";
 import { Button, cn, NavButton, Separator, Tooltip, TooltipContent, TooltipTrigger } from "@mdcz/ui";
 import {
   FileText,
@@ -42,18 +48,25 @@ export interface AppShellProps {
   systemNav?: ShellNavItem[];
 }
 
-export const PRIMARY_SHELL_NAV: ShellNavItem[] = [
-  { label: "概览", to: "/overview", icon: LayoutDashboard },
-  { label: "工作台", to: "/workbench", icon: PlaySquare },
-  { label: "工具", to: "/tools", icon: Wrench },
-  { label: "媒体库", to: "/library", icon: Library },
-];
+const SHELL_ROUTE_ICONS: Record<DesktopRouteId, LucideIcon> = {
+  about: Info,
+  library: Library,
+  logs: FileText,
+  overview: LayoutDashboard,
+  settings: Settings,
+  tools: Wrench,
+  workbench: PlaySquare,
+};
 
-export const SYSTEM_SHELL_NAV: ShellNavItem[] = [
-  { label: "设置", to: "/settings", icon: Settings },
-  { label: "日志", to: "/logs", icon: FileText },
-  { label: "关于", to: "/about", icon: Info },
-];
+const toShellNavItem = (route: DesktopRouteDefinition): ShellNavItem => ({
+  icon: SHELL_ROUTE_ICONS[route.id],
+  label: route.label,
+  to: route.path,
+});
+
+export const PRIMARY_SHELL_NAV: ShellNavItem[] = PRIMARY_DESKTOP_ROUTES.map(toShellNavItem);
+
+export const SYSTEM_SHELL_NAV: ShellNavItem[] = SYSTEM_DESKTOP_ROUTES.map(toShellNavItem);
 
 export function AppShell({
   children,

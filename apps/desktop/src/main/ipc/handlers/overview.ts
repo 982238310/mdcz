@@ -2,7 +2,7 @@ import type { ServiceContainer } from "@main/container";
 import { loggerService } from "@main/services/LoggerService";
 import { toErrorMessage } from "@main/utils/common";
 import { type MediaRoot, resolveRootRelativePath } from "@mdcz/media-store";
-import { sortAndLimitRecentAcquisitions, toRuntimeRecentAcquisition } from "@mdcz/runtime/library";
+import { createRecentAcquisitionsFromEntries } from "@mdcz/runtime/library";
 import { IpcChannel } from "@mdcz/shared/IpcChannel";
 import type { OverviewRecentAcquisitionItem } from "@mdcz/shared/ipc-contracts/overviewContract";
 import type { IpcRouterContract } from "@mdcz/shared/ipcContract";
@@ -77,23 +77,7 @@ const readPersistedRecentAcquisitions = async (context: ServiceContainer): Promi
   ]);
   const rootMap = new Map(roots.map((root) => [root.id, root]));
   const entryById = new Map(entries.map((entry) => [entry.id, entry]));
-  const recent = sortAndLimitRecentAcquisitions(
-    entries
-      .filter((entry) => !entry.hiddenFromRecentAt)
-      .map((entry) =>
-        toRuntimeRecentAcquisition({
-          id: entry.id,
-          number: entry.number,
-          fileName: entry.fileName,
-          title: entry.title,
-          actors: entry.actors,
-          thumbnailPath: entry.thumbnailPath,
-          lastKnownPath: entry.lastKnownPath,
-          createdAt: entry.createdAt,
-        }),
-      )
-      .filter((entry): entry is NonNullable<typeof entry> => entry !== null),
-  );
+  const recent = createRecentAcquisitionsFromEntries(entries);
 
   return recent.map((record) => ({
     id: record.id ?? "",

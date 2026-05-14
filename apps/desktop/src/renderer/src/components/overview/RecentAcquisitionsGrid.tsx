@@ -1,6 +1,8 @@
 import type { OverviewRecentAcquisitionItem } from "@mdcz/shared/ipc-contracts/overviewContract";
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@mdcz/ui";
-import { RecentAcquisitionsGrid as SharedRecentAcquisitionsGrid } from "@mdcz/views/overview";
+import {
+  RecentAcquisitionRemoveDialog,
+  RecentAcquisitionsGrid as SharedRecentAcquisitionsGrid,
+} from "@mdcz/views/overview";
 import { useState } from "react";
 import { toast } from "sonner";
 import { ipc } from "@/client/ipc";
@@ -28,31 +30,18 @@ export function RecentAcquisitionsGrid() {
           void recentQ.refetch();
         }}
       />
-      <Dialog open={Boolean(removeTarget)} onOpenChange={(open) => !open && setRemoveTarget(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>从最近入库移除</DialogTitle>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRemoveTarget(null)}>
-              取消
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                const target = removeTarget;
-                if (!target) return;
-                void removeRecentAcquisition(target, () => {
-                  setRemoveTarget(null);
-                  void recentQ.refetch();
-                });
-              }}
-            >
-              确认
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RecentAcquisitionRemoveDialog
+        open={Boolean(removeTarget)}
+        onOpenChange={(open) => !open && setRemoveTarget(null)}
+        onConfirm={() => {
+          const target = removeTarget;
+          if (!target) return;
+          void removeRecentAcquisition(target, () => {
+            setRemoveTarget(null);
+            void recentQ.refetch();
+          });
+        }}
+      />
     </>
   );
 }

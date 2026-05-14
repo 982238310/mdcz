@@ -12,6 +12,7 @@ import {
   SECTION_ORDER,
 } from "@mdcz/shared/settingsRegistry";
 import { TOOL_DEFINITIONS } from "@mdcz/shared/toolCatalog";
+import { PRIMARY_SHELL_NAV, SYSTEM_SHELL_NAV } from "@mdcz/views/shell";
 import { describe, expect, it } from "vitest";
 import { taskKindLabels } from "./routeCommon";
 import { buildHref, includesSearch, normalizeSearchText } from "./routeHelpers";
@@ -82,6 +83,9 @@ describe("route helpers", () => {
       "日志",
       "关于",
     ]);
+    expect([...PRIMARY_SHELL_NAV, ...SYSTEM_SHELL_NAV].map((route) => [route.label, route.to])).toEqual(
+      DESKTOP_ROUTE_DEFINITIONS.map((route) => [route.label, route.path]),
+    );
     expect(TOOL_DEFINITIONS.map((tool) => tool.id)).toEqual([
       "single-file-scraper",
       "crawler-tester",

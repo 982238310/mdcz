@@ -1,6 +1,11 @@
 import { stat } from "node:fs/promises";
 import { resolveRootRelativePath } from "@mdcz/media-store";
 import type { LibraryEntryRecord } from "@mdcz/persistence";
+import {
+  createRuntimeLibraryOverview,
+  getLatestLibraryEntryTimestamp,
+  type RuntimeLibraryEntrySummaryInput,
+} from "@mdcz/runtime/library";
 import type {
   CrawlerDataDto,
   LibraryDetailResponse,
@@ -74,39 +79,49 @@ export class LibraryService {
 
   async overview(): Promise<OverviewSummaryResponse> {
     const state = await this.persistence.getState();
-    const latestOutput = await state.repositories.library.latestScrapeOutput();
-    const listed = await this.listDtos({ limit: 200 }, true);
-    const entries = listed.entries.filter((entry) => !entry.hiddenFromRecentAt).slice(0, 8);
-    const fallbackOutput = entries.reduce(
-      (summary, entry) => ({
-        fileCount: summary.fileCount + 1,
-        totalBytes: summary.totalBytes + entry.size,
-        outputAt: summary.outputAt && summary.outputAt > entry.createdAt ? summary.outputAt : entry.createdAt,
-        rootPath: null,
+    const [latestOutput, roots, records] = await Promise.all([
+      state.repositories.library.latestScrapeOutput(),
+      this.mediaRoots.list(),
+      state.repositories.library.listEntries(),
+    ]);
+    const rootMap = new Map(roots.roots.map((root) => [root.id, root]));
+    const entries = records.filter((entry) => rootMap.has(entry.rootId));
+    const runtimeEntries = entries.map(toRuntimeLibraryEntrySummaryInput);
+    const latestEntryTimestamp = getLatestLibraryEntryTimestamp(runtimeEntries);
+    const overview = createRuntimeLibraryOverview({
+      entries: runtimeEntries,
+      latestOutput,
+      now: latestEntryTimestamp ?? Date.now(),
+      recentLimit: 8,
+    });
+    const entryById = new Map(entries.map((entry) => [entry.id, entry]));
+    const outputAt = latestOutput ? overview.output.scannedAt : latestEntryTimestamp;
+    const recentAcquisitions = await Promise.all(
+      overview.recentAcquisitions.map(async (entry) => {
+        const record = entryById.get(entry.id ?? "");
+        const root = record ? rootMap.get(record.rootId) : undefined;
+        return {
+          id: entry.id ?? "",
+          rootId: record?.rootId ?? "",
+          number: entry.number,
+          title: entry.title,
+          actors: entry.actors,
+          thumbnailPath: entry.thumbnailPath ?? null,
+          lastKnownPath: entry.lastKnownPath,
+          completedAt: new Date(entry.completedAt).toISOString(),
+          available: record && root ? await this.checkAvailability(root, record.rootRelativePath) : null,
+        };
       }),
-      { fileCount: 0, totalBytes: 0, outputAt: null as string | null, rootPath: null as string | null },
     );
 
     return {
-      output: latestOutput
-        ? {
-            fileCount: latestOutput.fileCount,
-            totalBytes: latestOutput.totalBytes,
-            outputAt: latestOutput.completedAt.toISOString(),
-            rootPath: latestOutput.outputDirectory,
-          }
-        : fallbackOutput,
-      recentAcquisitions: entries.map((entry) => ({
-        id: entry.id,
-        rootId: entry.rootId,
-        number: entry.number ?? entry.fileName,
-        title: entry.title ?? entry.fileName,
-        actors: entry.actors,
-        thumbnailPath: entry.thumbnailPath,
-        lastKnownPath: entry.lastKnownPath,
-        completedAt: entry.createdAt,
-        available: entry.available,
-      })),
+      output: {
+        fileCount: overview.output.fileCount,
+        totalBytes: overview.output.totalBytes,
+        outputAt: outputAt ? new Date(outputAt).toISOString() : null,
+        rootPath: overview.output.rootPath,
+      },
+      recentAcquisitions,
     };
   }
 
@@ -234,3 +249,16 @@ const parseCrawlerData = (value: string | null): CrawlerDataDto | null => {
     return null;
   }
 };
+
+const toRuntimeLibraryEntrySummaryInput = (entry: LibraryEntryRecord): RuntimeLibraryEntrySummaryInput => ({
+  id: entry.id,
+  number: entry.number,
+  fileName: entry.fileName,
+  title: entry.title,
+  actors: entry.actors,
+  thumbnailPath: entry.thumbnailPath,
+  lastKnownPath: entry.lastKnownPath,
+  createdAt: entry.createdAt,
+  hiddenFromRecentAt: entry.hiddenFromRecentAt,
+  size: entry.size,
+});

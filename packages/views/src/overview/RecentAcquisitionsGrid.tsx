@@ -1,4 +1,4 @@
-import { Button, cn } from "@mdcz/ui";
+import { Button, cn, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@mdcz/ui";
 import { AlertCircle, FolderOpen, ImageOff, Library, Loader2, Trash2 } from "lucide-react";
 import { type ComponentType, type ReactNode, useState } from "react";
 
@@ -22,6 +22,32 @@ export interface RecentAcquisitionsGridProps<TItem extends RecentAcquisitionView
   onItemOpen?: (item: TItem) => void;
   onItemRemove?: (item: TItem) => void;
   onRetry?: () => void;
+}
+
+export interface RecentAcquisitionRemoveDialogProps {
+  open: boolean;
+  onConfirm: () => void;
+  onOpenChange: (open: boolean) => void;
+}
+
+export function RecentAcquisitionRemoveDialog({ open, onConfirm, onOpenChange }: RecentAcquisitionRemoveDialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>从最近入库移除</DialogTitle>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            取消
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            确认
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 }
 
 export function RecentAcquisitionsGrid<TItem extends RecentAcquisitionViewItem = RecentAcquisitionViewItem>({
@@ -135,40 +161,43 @@ function AcquisitionCard<TItem extends RecentAcquisitionViewItem>({
     </>
   );
 
-  const actions = (
-    <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-      {onRemove ? (
-        <Button
-          aria-label={`从最近入库移除 ${title}`}
-          className="h-8 w-8 rounded-quiet-capsule bg-surface-floating/76 p-0 text-foreground backdrop-blur-md hover:bg-surface-floating"
-          onClick={(event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            onRemove(item);
-          }}
-          size="icon"
-          type="button"
-          variant="ghost"
-        >
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      ) : null}
-      <Button
-        aria-label={`打开 ${title} 所在目录`}
-        className="h-8 w-8 rounded-quiet-capsule bg-surface-floating/76 p-0 text-foreground backdrop-blur-md hover:bg-surface-floating"
-        onClick={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-          onOpen?.(item);
-        }}
-        size="icon"
-        type="button"
-        variant="ghost"
-      >
-        <FolderOpen className="h-4 w-4" />
-      </Button>
-    </div>
-  );
+  const actions =
+    onRemove || onOpen ? (
+      <div className="absolute right-3 top-3 z-10 flex items-center gap-1.5 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
+        {onRemove ? (
+          <Button
+            aria-label={`从最近入库移除 ${title}`}
+            className="h-8 w-8 rounded-quiet-capsule bg-surface-floating/76 p-0 text-foreground backdrop-blur-md hover:bg-surface-floating"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onRemove(item);
+            }}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        ) : null}
+        {onOpen ? (
+          <Button
+            aria-label={`打开 ${title} 所在目录`}
+            className="h-8 w-8 rounded-quiet-capsule bg-surface-floating/76 p-0 text-foreground backdrop-blur-md hover:bg-surface-floating"
+            onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onOpen(item);
+            }}
+            size="icon"
+            type="button"
+            variant="ghost"
+          >
+            <FolderOpen className="h-4 w-4" />
+          </Button>
+        ) : null}
+      </div>
+    ) : null;
 
   if (LinkComponent) {
     return (
@@ -184,16 +213,25 @@ function AcquisitionCard<TItem extends RecentAcquisitionViewItem>({
     );
   }
 
+  if (onOpen) {
+    return (
+      <div className={className}>
+        <Button
+          type="button"
+          className="absolute inset-0 h-full w-full items-stretch justify-start rounded-quiet-lg p-0 text-left whitespace-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          onClick={() => onOpen(item)}
+          variant="ghost"
+        >
+          {content}
+        </Button>
+        {actions}
+      </div>
+    );
+  }
+
   return (
     <div className={className}>
-      <Button
-        type="button"
-        className="absolute inset-0 h-full w-full items-stretch justify-start rounded-quiet-lg p-0 text-left whitespace-normal outline-none focus-visible:ring-2 focus-visible:ring-ring"
-        onClick={() => onOpen?.(item)}
-        variant="ghost"
-      >
-        {content}
-      </Button>
+      {content}
       {actions}
     </div>
   );

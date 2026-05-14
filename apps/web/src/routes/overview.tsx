@@ -1,7 +1,11 @@
 import { toErrorMessage } from "@mdcz/shared/error";
 import type { OverviewRecentAcquisitionDto } from "@mdcz/shared/serverDtos";
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@mdcz/ui";
-import { OverviewHeroStartCard, OverviewMaintenanceCard, RecentAcquisitionsGrid } from "@mdcz/views/overview";
+import {
+  OverviewHeroStartCard,
+  OverviewMaintenanceCard,
+  RecentAcquisitionRemoveDialog,
+  RecentAcquisitionsGrid,
+} from "@mdcz/views/overview";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -39,7 +43,7 @@ export function OverviewPage() {
 
   return (
     <main className="h-full overflow-y-auto bg-surface-canvas text-foreground">
-      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-12 gap-8 px-6 py-8 lg:px-12 lg:py-12">
+      <div className="mx-auto grid w-full max-w-[1600px] grid-cols-12 gap-8 px-6 py-8 md:px-10 lg:px-12 lg:py-12">
         <section className="col-span-12 grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
           <OverviewHeroStartCard
             className="lg:col-span-2"
@@ -83,31 +87,18 @@ export function OverviewPage() {
           />
         </section>
       </div>
-      <Dialog open={Boolean(removeTarget)} onOpenChange={(open) => !open && setRemoveTarget(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>从最近入库移除</DialogTitle>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRemoveTarget(null)}>
-              取消
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                const target = removeTarget;
-                if (!target) return;
-                void removeRecentAcquisition(target, () => {
-                  setRemoveTarget(null);
-                  void overviewQ.refetch();
-                });
-              }}
-            >
-              确认
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <RecentAcquisitionRemoveDialog
+        open={Boolean(removeTarget)}
+        onOpenChange={(open) => !open && setRemoveTarget(null)}
+        onConfirm={() => {
+          const target = removeTarget;
+          if (!target) return;
+          void removeRecentAcquisition(target, () => {
+            setRemoveTarget(null);
+            void overviewQ.refetch();
+          });
+        }}
+      />
     </main>
   );
 }
