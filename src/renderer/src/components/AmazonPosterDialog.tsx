@@ -1,6 +1,6 @@
 import { toErrorMessage } from "@shared/error";
 import type { AmazonPosterLookupResult, AmazonPosterScanItem } from "@shared/ipcTypes";
-import { ArrowRight, Check, ImageIcon, LoaderCircle, Minus } from "lucide-react";
+import { ArrowRight, Check, ImageIcon, LoaderCircle, Minus, Search } from "lucide-react";
 import type { ComponentType } from "react";
 import { useEffect, useMemo, useState } from "react";
 import { ipc } from "@/client/ipc";
@@ -15,6 +15,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/Dialog";
+import { Input } from "@/components/ui/Input";
+import { Label } from "@/components/ui/Label";
 import { Progress } from "@/components/ui/Progress";
 import { ScrollArea } from "@/components/ui/ScrollArea";
 import { useToast } from "@/contexts/ToastProvider";
@@ -25,6 +27,8 @@ const LOOKUP_CONCURRENCY = 2;
 
 type ItemState = {
   scan: AmazonPosterScanItem;
+  searchTitle: string;
+  lookupSearchTitle: string | null;
   lookup: AmazonPosterLookupResult | null;
   lookupStatus: "pending" | "loading" | "done" | "error";
   selection: "current" | "amazon" | null;
@@ -96,7 +100,11 @@ function getStatusBadge(state: ItemState): {
   variant: "default" | "secondary" | "outline" | "destructive";
   icon: ComponentType<{ className?: string }>;
 } {
-  if (state.lookupStatus === "loading" || state.lookupStatus === "pending") {
+  if (state.lookupStatus === "pending") {
+    return { label: "待查询", variant: "secondary", icon: Search };
+  }
+
+  if (state.lookupStatus === "loading") {
     return { label: "查询中", variant: "secondary", icon: LoaderCircle };
   }
 
@@ -118,7 +126,7 @@ function getStatusBadge(state: ItemState): {
 export function AmazonPosterDialog({ open, onOpenChange, items }: AmazonPosterDialogProps) {
   const { showError, showInfo, showSuccess } = useToast();
   const [itemStates, setItemStates] = useState<ItemState[]>([]);
-  const [expandedIndex, setExpandedIndex] = useState(0);
+  const [expandedIndex, setExpandedIndex] = useState<number | null>(0);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [applying, setApplying] = useState(false);
 
@@ -133,6 +141,8 @@ export function AmazonPosterDialog({ open, onOpenChange, items }: AmazonPosterDi
 
     const initialStates = items.map((scan) => ({
       scan,
+      searchTitle: scan.searchTitle,
+      lookupSearchTitle: null,
       lookup: null,
       lookupStatus: "pending" as const,
       selection: null,
@@ -163,9 +173,10 @@ export function AmazonPosterDialog({ open, onOpenChange, items }: AmazonPosterDi
 
         updateItem(currentIndex, (state) => ({ ...state, lookupStatus: "loading" }));
 
+        const queryTitle = items[currentIndex].searchTitle.trim();
         let result: AmazonPosterLookupResult;
         try {
-          result = await ipc.tool.amazonPosterLookup(items[currentIndex].nfoPath, items[currentIndex].title);
+          result = await ipc.tool.amazonPosterLookup(items[currentIndex].nfoPath, queryTitle);
         } catch (error) {
           result = {
             nfoPath: items[currentIndex].nfoPath,
@@ -181,6 +192,7 @@ export function AmazonPosterDialog({ open, onOpenChange, items }: AmazonPosterDi
 
         updateItem(currentIndex, (state) => ({
           ...state,
+          lookupSearchTitle: queryTitle,
           lookup: result,
           lookupStatus: result.reason.startsWith("查询失败:") ? "error" : "done",
           selection: result.amazonPosterUrl ? (state.selection === "current" ? "current" : "amazon") : state.selection,
@@ -218,6 +230,63 @@ export function AmazonPosterDialog({ open, onOpenChange, items }: AmazonPosterDi
 
   const handleSelectionChange = (index: number, selection: "current" | "amazon") => {
     setItemStates((prev) => prev.map((state, stateIndex) => (stateIndex === index ? { ...state, selection } : state)));
+  };
+
+  const handleSearchTitleChange = (index: number, searchTitle: string) => {
+    setItemStates((prev) =>
+      prev.map((state, stateIndex) =>
+        stateIndex === index
+          ? {
+              ...state,
+              searchTitle,
+              lookup: state.lookupSearchTitle === searchTitle.trim() ? state.lookup : null,
+              lookupStatus: state.lookupSearchTitle === searchTitle.trim() ? state.lookupStatus : "pending",
+              selection: state.lookupSearchTitle === searchTitle.trim() ? state.selection : null,
+            }
+          : state,
+      ),
+    );
+  };
+
+  const handleLookup = async (index: number) => {
+    const target = itemStates[index];
+    const queryTitle = target?.searchTitle.trim();
+    if (!target || !queryTitle) {
+      showError("请输入标题 / URL / ASIN");
+      return;
+    }
+
+    setItemStates((prev) =>
+      prev.map((state, stateIndex) =>
+        stateIndex === index ? { ...state, lookupStatus: "loading", lookup: null, selection: null } : state,
+      ),
+    );
+
+    let result: AmazonPosterLookupResult;
+    try {
+      result = await ipc.tool.amazonPosterLookup(target.scan.nfoPath, queryTitle);
+    } catch (error) {
+      result = {
+        nfoPath: target.scan.nfoPath,
+        amazonPosterUrl: null,
+        reason: `查询失败: ${toErrorMessage(error)}`,
+        elapsedMs: 0,
+      };
+    }
+
+    setItemStates((prev) =>
+      prev.map((state, stateIndex) =>
+        stateIndex === index
+          ? {
+              ...state,
+              lookupSearchTitle: queryTitle,
+              lookup: result,
+              lookupStatus: result.reason.startsWith("查询失败:") ? "error" : "done",
+              selection: result.amazonPosterUrl ? "amazon" : null,
+            }
+          : state,
+      ),
+    );
   };
 
   const handleApply = async () => {
@@ -293,7 +362,7 @@ export function AmazonPosterDialog({ open, onOpenChange, items }: AmazonPosterDi
                     >
                       <button
                         type="button"
-                        onClick={() => setExpandedIndex(index)}
+                        onClick={() => setExpandedIndex((current) => (current === index ? null : index))}
                         className={cn(
                           "flex w-full items-center gap-3 px-4 py-3 text-left transition-colors",
                           isExpanded ? "bg-primary/5" : "hover:bg-muted/20",
@@ -336,6 +405,38 @@ export function AmazonPosterDialog({ open, onOpenChange, items }: AmazonPosterDi
                               </div>
                               <div className="text-xs text-muted-foreground">
                                 耗时 {formatElapsed(state.lookup?.elapsedMs)}
+                              </div>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label
+                                htmlFor={`amazon-search-title-${index}`}
+                                className="text-xs font-medium text-muted-foreground"
+                              >
+                                标题 / URL / ASIN
+                              </Label>
+                              <div className="flex flex-col gap-2 sm:flex-row">
+                                <Input
+                                  id={`amazon-search-title-${index}`}
+                                  value={state.searchTitle}
+                                  onChange={(event) => handleSearchTitleChange(index, event.target.value)}
+                                  disabled={state.lookupStatus === "loading"}
+                                  className="min-w-0 flex-1"
+                                />
+                                <Button
+                                  type="button"
+                                  variant="secondary"
+                                  onClick={() => void handleLookup(index)}
+                                  disabled={!state.searchTitle.trim() || state.lookupStatus === "loading"}
+                                  className="gap-2"
+                                >
+                                  {state.lookupStatus === "loading" ? (
+                                    <LoaderCircle className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Search className="h-4 w-4" />
+                                  )}
+                                  重新查询
+                                </Button>
                               </div>
                             </div>
 
@@ -408,7 +509,7 @@ export function AmazonPosterDialog({ open, onOpenChange, items }: AmazonPosterDi
           <DialogHeader>
             <DialogTitle>确认替换海报</DialogTitle>
             <DialogDescription>
-              即将替换 {selectedAmazonItems.length} 个条目的海报文件。此操作会覆盖现有海报，无法撤销。
+              即将替换 {selectedAmazonItems.length} 个条目的海报文件。此操作会覆盖现有海报。
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

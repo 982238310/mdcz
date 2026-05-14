@@ -61,9 +61,14 @@ export class AmazonPosterToolService {
 
     for (const nfoPath of nfoPaths) {
       try {
+        const directory = dirname(nfoPath);
+        const nfoBaseName = basename(nfoPath, extname(nfoPath)).toLowerCase();
+        if (nfoBaseName === MOVIE_NFO_BASE_NAME && (directoryNamedNfoCounts.get(directory) ?? 0) > 0) {
+          continue;
+        }
+
         const xml = await readFile(nfoPath, "utf8");
         const parsed = parseNfo(xml);
-        const directory = dirname(nfoPath);
         const allowFixedPosterFallback = (directoryNamedNfoCounts.get(directory) ?? 0) <= 1;
         const currentPosterPath = await this.findCurrentPosterPath(
           directory,
@@ -101,6 +106,7 @@ export class AmazonPosterToolService {
           nfoPath,
           directory,
           title: parsed.title,
+          searchTitle: parsed.title,
           number: parsed.number,
           currentPosterPath,
           currentPosterWidth,
