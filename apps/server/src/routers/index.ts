@@ -40,13 +40,17 @@ import type { ServerServices } from "../services";
 import { decorateTaskLog } from "../services/runtimeLogService";
 import { mapConfigError, protectedProcedure, setupProcedure, t } from "./context";
 
-const syncMediaRootFromConfig = async (services: ServerServices, config: Configuration) => {
+const syncMediaRootFromConfig = async (
+  services: ServerServices,
+  config: Configuration,
+  options: { displayName?: string } = {},
+) => {
   const mediaPath = config.paths.mediaPath.trim();
   if (!mediaPath) {
     return;
   }
   await services.mediaRoots.syncSingleEnabledRoot({
-    displayName: pathDisplayName(mediaPath),
+    displayName: options.displayName?.trim() || pathDisplayName(mediaPath),
     hostPath: mediaPath,
     enabled: true,
   });
@@ -385,7 +389,7 @@ export const appRouter = t.router({
   setup: t.router({
     complete: setupProcedure.input(setupCompleteInputSchema).mutation(async ({ ctx, input }) => {
       const config = await ctx.services.config.update({ paths: { mediaPath: input.mediaRoot.hostPath } });
-      await syncMediaRootFromConfig(ctx.services, config);
+      await syncMediaRootFromConfig(ctx.services, config, { displayName: input.mediaRoot.displayName });
       return await ctx.services.auth.completeSetup(input.password);
     }),
     status: t.procedure.query(async ({ ctx }) => {

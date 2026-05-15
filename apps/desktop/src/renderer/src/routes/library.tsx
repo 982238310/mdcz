@@ -1,8 +1,7 @@
 import { toErrorMessage } from "@mdcz/shared/error";
 import type { LibraryEntryDto } from "@mdcz/shared/serverDtos";
-import { Button, Checkbox, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@mdcz/ui";
 import type { LibraryAvailabilityFilter } from "@mdcz/views/library";
-import { LibraryIndexView } from "@mdcz/views/library";
+import { LibraryDeleteDialog, LibraryIndexView } from "@mdcz/views/library";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
@@ -47,56 +46,25 @@ export function LibraryPage() {
         query={query}
         total={libraryQ.data?.total ?? 0}
       />
-      <Dialog
+      <LibraryDeleteDialog
         open={Boolean(deleteTarget)}
-        onOpenChange={(open) => {
-          if (!open) {
+        deleteMediaFiles={deleteMediaFiles}
+        showDeleteMediaFiles
+        onDeleteMediaFilesChange={setDeleteMediaFiles}
+        onCancel={() => {
+          setDeleteTarget(null);
+          setDeleteMediaFiles(false);
+        }}
+        onConfirm={() => {
+          const target = deleteTarget;
+          if (!target) return;
+          void deleteLibraryEntry(target, deleteMediaFiles, () => {
             setDeleteTarget(null);
             setDeleteMediaFiles(false);
-          }
+            void libraryQ.refetch();
+          });
         }}
-      >
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>从媒体库移除</DialogTitle>
-          </DialogHeader>
-          <div className="flex items-center gap-3 rounded-quiet bg-surface-low px-4 py-3 text-sm font-medium text-foreground">
-            <Checkbox
-              checked={deleteMediaFiles}
-              id="delete-media-files"
-              onCheckedChange={(checked) => setDeleteMediaFiles(checked === true)}
-            />
-            <label className="cursor-pointer" htmlFor="delete-media-files">
-              同时删除媒体文件
-            </label>
-          </div>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeleteTarget(null);
-                setDeleteMediaFiles(false);
-              }}
-            >
-              取消
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                const target = deleteTarget;
-                if (!target) return;
-                void deleteLibraryEntry(target, deleteMediaFiles, () => {
-                  setDeleteTarget(null);
-                  setDeleteMediaFiles(false);
-                  void libraryQ.refetch();
-                });
-              }}
-            >
-              确认移除
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      />
     </>
   );
 }

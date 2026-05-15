@@ -50,8 +50,8 @@ function useResolvedArtworkSources(item: DetailViewItem | null, port: DetailActi
 
     const resolveSources = async () => {
       const [nextPosterSources, nextThumbSources] = await Promise.all([
-        port.resolveImageCandidates(posterCandidates, baseDir),
-        port.resolveImageCandidates(thumbCandidates, baseDir),
+        port.resolveImageCandidates(posterCandidates, baseDir, item),
+        port.resolveImageCandidates(thumbCandidates, baseDir, item),
       ]);
 
       if (!cancelled) {
@@ -65,7 +65,7 @@ function useResolvedArtworkSources(item: DetailViewItem | null, port: DetailActi
     return () => {
       cancelled = true;
     };
-  }, [baseDir, posterCandidateKey, thumbCandidateKey, port]);
+  }, [baseDir, posterCandidateKey, thumbCandidateKey, port, item]);
 
   const handlePosterError = useCallback(() => {
     setPosterIndex((currentIndex) => Math.min(currentIndex + 1, posterSources.length));

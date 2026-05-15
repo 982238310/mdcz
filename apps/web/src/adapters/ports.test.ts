@@ -1,13 +1,57 @@
 import type { ScanTaskDto } from "@mdcz/shared/serverDtos";
 import { useWorkbenchTaskStore } from "@mdcz/shared/stores/workbenchTaskStore";
 import type { LocalScanEntry } from "@mdcz/shared/types";
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { api } from "../client";
-import { createWebMaintenanceActionPort, createWebScrapeActionPort } from "./ports";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { api, setAdminToken } from "../client";
+import { createWebDetailPort, createWebMaintenanceActionPort, createWebScrapeActionPort } from "./ports";
+
+const originalLocalStorage = globalThis.localStorage;
+const storage = new Map<string, string>();
+
+beforeEach(() => {
+  storage.clear();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: {
+      getItem: (key: string) => storage.get(key) ?? null,
+      removeItem: (key: string) => {
+        storage.delete(key);
+      },
+      setItem: (key: string, value: string) => {
+        storage.set(key, value);
+      },
+    },
+  });
+});
 
 afterEach(() => {
   vi.restoreAllMocks();
+  setAdminToken(undefined);
   useWorkbenchTaskStore.getState().reset();
+  Object.defineProperty(globalThis, "localStorage", {
+    configurable: true,
+    value: originalLocalStorage,
+  });
+});
+
+describe("web detail action port", () => {
+  it("resolves root-relative image candidates through authenticated library assets", async () => {
+    setAdminToken("token-1");
+    const port = createWebDetailPort();
+    const [poster, remote] = await port.resolveImageCandidates(
+      ["JAV_output/ABC-001/poster.jpg", "https://img.example/poster.jpg"],
+      undefined,
+      {
+        id: "root-1:ABC-001.mp4",
+        number: "ABC-001",
+        path: "ABC-001.mp4",
+        status: "success",
+      },
+    );
+
+    expect(poster).toBe("http://127.0.0.1:3838/api/library/assets/root-1/JAV_output/ABC-001/poster.jpg?token=token-1");
+    expect(remote).toBe("https://img.example/poster.jpg");
+  });
 });
 
 describe("web scrape action port", () => {

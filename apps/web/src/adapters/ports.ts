@@ -8,7 +8,7 @@ import type {
   SharedWorkbenchPorts,
 } from "@mdcz/views/adapters";
 import type { DetailViewItem } from "@mdcz/views/detail";
-import { api } from "../client";
+import { api, getLibraryAssetSrc } from "../client";
 
 const dedupeValues = (values: string[]): string[] =>
   values
@@ -25,17 +25,41 @@ const toRelativePath = (item: DetailViewItem, path: string): string => {
   return normalizedPath;
 };
 
+const getRootId = (item: DetailViewItem): string => item.id.split(":")[0] || "";
+
+const isRemoteImageCandidate = (value: string): boolean => /^(?:https?:\/\/|data:|blob:)/iu.test(value.trim());
+
+const toAssetCandidate = (candidate: string, item?: DetailViewItem | null): string => {
+  const trimmed = candidate.trim();
+  if (!trimmed) {
+    return "";
+  }
+  if (isRemoteImageCandidate(trimmed)) {
+    return trimmed;
+  }
+  if (!item) {
+    return trimmed;
+  }
+
+  const rootId = getRootId(item);
+  if (!rootId) {
+    return trimmed;
+  }
+  return getLibraryAssetSrc({ rootId, path: toRelativePath(item, trimmed) }) || trimmed;
+};
+
 export const createWebDetailPort = (): DetailActionPort => ({
   capabilities: {
     play: "hidden",
     openFolder: "hidden",
     openNfo: "enabled",
   },
-  resolveImageCandidates: async (candidates) => dedupeValues(candidates),
+  resolveImageCandidates: async (candidates, _baseDir, item) =>
+    dedupeValues(candidates.map((candidate) => toAssetCandidate(candidate, item))),
   play: () => undefined,
   openFolder: () => undefined,
   readNfo: async (item, path) => {
-    const rootId = item.id.split(":")[0] || "";
+    const rootId = getRootId(item);
     const relativePath = toRelativePath(item, path);
     const response = await api.scrape.nfoRead({ rootId, relativePath });
     return {
@@ -44,7 +68,7 @@ export const createWebDetailPort = (): DetailActionPort => ({
     };
   },
   writeNfo: async (item, path, data) => {
-    const rootId = item.id.split(":")[0] || "";
+    const rootId = getRootId(item);
     await api.scrape.nfoWrite({ rootId, relativePath: toRelativePath(item, path), data });
   },
 });

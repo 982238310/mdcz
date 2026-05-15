@@ -452,6 +452,7 @@ describe("buildServer", () => {
     });
     const state = JSON.parse(await readFile(join(services.config.runtimePaths.configDir, "auth-state.json"), "utf8"));
     const config = await services.config.get();
+    const roots = await services.mediaRoots.list();
 
     expect(completeResponse.statusCode).toBe(200);
     expect(completeResponse.json().result.data).toMatchObject({ authenticated: true });
@@ -464,6 +465,8 @@ describe("buildServer", () => {
       usingDefaultPassword: false,
     });
     expect(config.paths.mediaPath).toBe(root);
+    expect(roots.roots).toHaveLength(1);
+    expect(roots.roots[0]).toMatchObject({ displayName: "Media", hostPath: root, enabled: true });
     expect(state).toEqual({ setupCompleted: true, adminPassword: "changed-password" });
     expect(repeatResponse.statusCode).toBe(403);
   });

@@ -1,8 +1,7 @@
 import { toErrorMessage } from "@mdcz/shared/error";
 import type { LibraryEntryDto } from "@mdcz/shared/serverDtos";
-import { Button, Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@mdcz/ui";
 import type { LibraryAvailabilityFilter } from "@mdcz/views/library";
-import { LibraryIndexView } from "@mdcz/views/library";
+import { LibraryDeleteDialog, LibraryIndexView } from "@mdcz/views/library";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
@@ -39,31 +38,18 @@ export function LibraryPage() {
         query={query}
         total={libraryQ.data?.total ?? 0}
       />
-      <Dialog open={Boolean(deleteTarget)} onOpenChange={(open) => !open && setDeleteTarget(null)}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>从媒体库移除</DialogTitle>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteTarget(null)}>
-              取消
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={() => {
-                const target = deleteTarget;
-                if (!target) return;
-                void deleteLibraryEntry(target, () => {
-                  setDeleteTarget(null);
-                  void libraryQ.refetch();
-                });
-              }}
-            >
-              确认移除
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <LibraryDeleteDialog
+        open={Boolean(deleteTarget)}
+        onCancel={() => setDeleteTarget(null)}
+        onConfirm={() => {
+          const target = deleteTarget;
+          if (!target) return;
+          void deleteLibraryEntry(target, () => {
+            setDeleteTarget(null);
+            void libraryQ.refetch();
+          });
+        }}
+      />
     </>
   );
 }

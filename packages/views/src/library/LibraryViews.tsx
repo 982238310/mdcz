@@ -1,5 +1,20 @@
 import type { LibraryEntryDto } from "@mdcz/shared";
-import { Badge, Button, cn, Input, Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@mdcz/ui";
+import {
+  Badge,
+  Button,
+  Checkbox,
+  cn,
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@mdcz/ui";
 import { AlertCircle, Database, FolderOpen, RefreshCw, Search, Trash2 } from "lucide-react";
 import { type ComponentType, type ReactNode, useState } from "react";
 
@@ -20,6 +35,15 @@ export interface LibraryIndexViewProps {
   onOpenFolder?: (entry: LibraryEntryDto) => void;
   onQueryChange: (value: string) => void;
   onRefresh: () => void;
+}
+
+export interface LibraryDeleteDialogProps {
+  open: boolean;
+  deleteMediaFiles?: boolean;
+  showDeleteMediaFiles?: boolean;
+  onDeleteMediaFilesChange?: (value: boolean) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
 }
 
 const availabilityFilters: Array<{ label: string; value: LibraryAvailabilityFilter }> = [
@@ -133,6 +157,52 @@ export function LibraryIndexView({
         </div>
       </main>
     </TooltipProvider>
+  );
+}
+
+export function LibraryDeleteDialog({
+  open,
+  deleteMediaFiles = false,
+  showDeleteMediaFiles = false,
+  onDeleteMediaFilesChange,
+  onCancel,
+  onConfirm,
+}: LibraryDeleteDialogProps) {
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          onCancel();
+        }
+      }}
+    >
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>从媒体库移除</DialogTitle>
+        </DialogHeader>
+        {showDeleteMediaFiles ? (
+          <div className="flex items-center gap-3 rounded-quiet bg-surface-low px-4 py-3 text-sm font-medium text-foreground">
+            <Checkbox
+              checked={deleteMediaFiles}
+              id="delete-media-files"
+              onCheckedChange={(checked) => onDeleteMediaFilesChange?.(checked === true)}
+            />
+            <label className="cursor-pointer" htmlFor="delete-media-files">
+              同时删除媒体文件
+            </label>
+          </div>
+        ) : null}
+        <DialogFooter>
+          <Button variant="outline" onClick={onCancel}>
+            取消
+          </Button>
+          <Button variant="destructive" onClick={onConfirm}>
+            确认移除
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

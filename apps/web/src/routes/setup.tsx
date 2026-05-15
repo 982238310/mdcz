@@ -101,7 +101,7 @@ export const SetupPage = () => {
             <Progress className="h-1 bg-surface-low" value={(step / 2) * 100} />
           </div>
           <div className="relative flex justify-between">
-            {["密码", "完成"].map((label, index) => (
+            {["密码", "媒体库"].map((label, index) => (
               <div
                 className={`flex flex-col items-center gap-3 ${index <= step ? "text-primary" : "text-muted-foreground"}`}
                 key={label}
