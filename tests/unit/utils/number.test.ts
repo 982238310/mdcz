@@ -7,6 +7,9 @@ describe("extractNumber", () => {
       { input: "MFC-2001", expected: "MFC-2001" },
       { input: "AFC-2001", expected: "AFC-2001" },
       { input: "S2MBD-047", expected: "S2MBD-047" },
+      { input: "H0930-gol205", expected: "H0930-GOL205" },
+      { input: "h0930_gol205", expected: "H0930-GOL205" },
+      { input: "h0930 gol205", expected: "H0930-GOL205" },
     ];
 
     for (const { input, expected } of cases) {
@@ -258,6 +261,11 @@ describe("parseFileInfo", () => {
 
     expect(parseFileInfo("/tmp/FC2-123456-标题①.mp4")).toMatchObject({
       number: "FC2-123456",
+      part: undefined,
+    });
+
+    expect(parseFileInfo("/tmp/H0930-gol205.mp4")).toMatchObject({
+      number: "H0930-GOL205",
       part: undefined,
     });
   });

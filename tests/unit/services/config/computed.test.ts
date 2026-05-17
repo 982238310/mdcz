@@ -277,6 +277,7 @@ describe("buildComputedConfiguration", () => {
 
   it("keeps actor photo defaults empty under paths and ignores legacy personSync.actorPhotoFolder", () => {
     const defaultConfiguration = configurationSchema.parse({});
+    expect(defaultConfiguration.scrape.sites).not.toContain(Website.H0930);
     expect(defaultConfiguration.paths.actorPhotoFolder).toBe("");
     expect(defaultConfiguration.aggregation.fieldPriorities.durationSeconds).toEqual([
       Website.AVBASE,

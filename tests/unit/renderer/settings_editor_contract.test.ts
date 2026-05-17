@@ -349,9 +349,15 @@ describe("settings editor metadata and filtering", () => {
       showAdvanced: false,
       modifiedKeys: new Set<string>(),
     });
+    const h0930Search = buildSettingsBrowseState({
+      query: "h0930",
+      showAdvanced: false,
+      modifiedKeys: new Set<string>(),
+    });
 
     expect(fc2HubSearch.visibleEntries.map((candidate) => candidate.key)).toEqual(["scrape.sites"]);
     expect(wikiSearch.visibleEntries.map((candidate) => candidate.key)).toEqual(["scrape.sites"]);
+    expect(h0930Search.visibleEntries.map((candidate) => candidate.key)).toEqual(["scrape.sites"]);
   });
 
   it("matches the R18.dev site row through the grouped site-priority field only", () => {
@@ -528,6 +534,7 @@ describe("settings editor save and content helpers", () => {
       Website.KM_PRODUCE,
       Website.FC2,
       Website.FC2HUB,
+      Website.H0930,
       Website.PPVDATABANK,
       Website.SOKMIL,
       Website.KINGDOM,
@@ -547,6 +554,7 @@ describe("settings editor save and content helpers", () => {
     expect(optionsById.get("official")?.sites).not.toEqual(expect.arrayContaining(["fc2", "fc2hub", "ppvdatabank"]));
     expect(optionsById.get(Website.FC2)).toMatchObject({ sites: [Website.FC2] });
     expect(optionsById.get(Website.FC2HUB)).toMatchObject({ sites: [Website.FC2HUB] });
+    expect(optionsById.get(Website.H0930)).toMatchObject({ sites: [Website.H0930] });
     expect(optionsById.get(Website.PPVDATABANK)).toMatchObject({ sites: [Website.PPVDATABANK] });
     expect(optionsById.get(Website.SOKMIL)).toMatchObject({ sites: [Website.SOKMIL] });
     expect(optionsById.get(Website.KINGDOM)).toMatchObject({ sites: [Website.KINGDOM] });
@@ -558,7 +566,11 @@ describe("settings editor save and content helpers", () => {
     expect(optionsById.get(Website.JAV321)).toMatchObject({ sites: [Website.JAV321] });
 
     for (const option of optionsById.values()) {
-      expect(option.description.length).toBeGreaterThan(0);
+      if (option.id === Website.H0930) {
+        expect(option.description).toBeUndefined();
+        continue;
+      }
+      expect(option.description?.length).toBeGreaterThan(0);
     }
   });
 });

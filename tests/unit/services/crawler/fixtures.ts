@@ -42,6 +42,11 @@ export class FixtureNetworkClient extends NetworkClient {
     return JSON.stringify(fixture);
   }
 
+  override async getContent(url: string, init: GetTextInit = {}): Promise<Uint8Array> {
+    const text = await this.getText(url, init);
+    return new TextEncoder().encode(text);
+  }
+
   override async getJson<T>(url: string, init: GetTextInit = {}): Promise<T> {
     this.requests.push({
       url,

@@ -9,7 +9,7 @@ type SitePriorityOptionStateValue = "none" | "partial" | "all";
 interface SitePriorityOptionDefinition {
   id: SitePriorityOptionId;
   label: string;
-  description: string;
+  description?: string;
   sites: Website[];
   aliases?: string[];
 }
@@ -74,6 +74,12 @@ const SITE_PRIORITY_OPTION_DEFINITIONS: SitePriorityOptionDefinition[] = [
     label: Website.JAV321,
     description: "检索型聚合站，适合作为额外兜底来源；字段完整度和稳定性通常低于主流聚合站。",
     sites: [Website.JAV321],
+  },
+  {
+    id: Website.H0930,
+    label: Website.H0930,
+    sites: [Website.H0930],
+    aliases: ["h0930", "h0930.com"],
   },
   {
     id: Website.FC2,

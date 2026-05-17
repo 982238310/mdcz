@@ -13,6 +13,7 @@ describe("siteConnectivity", () => {
   it("uses the built-in site origin", () => {
     expect(resolveSiteConnectivityTargetUrl(Website.AVBASE)).toBe("https://www.avbase.net");
     expect(resolveSiteConnectivityTargetUrl(Website.DMM_TV)).toBe("https://video.dmm.co.jp/");
+    expect(resolveSiteConnectivityTargetUrl(Website.H0930)).toBe("https://www.h0930.com");
   });
 
   it("builds cookie headers from crawler settings and site-specific probe requirements", () => {

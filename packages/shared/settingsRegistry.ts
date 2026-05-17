@@ -166,6 +166,7 @@ const SITE_PRIORITY_EDITOR_ALIASES = [
   "AVBase",
   "FC2",
   "FC2Hub",
+  "H0930",
   "PPVDataBank",
   "R18.dev",
   "AVWikiDB",

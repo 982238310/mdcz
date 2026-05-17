@@ -26,6 +26,14 @@ export class FetchGateway {
     return this.networkClient.getText(url, this.toHttpInit(options));
   }
 
+  async fetchContent(url: string, options: FetchOptions = {}): Promise<Uint8Array> {
+    if (!this.networkClient.getContent) {
+      throw new Error("Network client does not support binary content fetches");
+    }
+
+    return this.networkClient.getContent(url, this.toHttpInit(options));
+  }
+
   async fetchPostHtml(url: string, body: string, options: FetchOptions = {}): Promise<string> {
     return this.networkClient.postText(url, body, this.toHttpInit(options));
   }

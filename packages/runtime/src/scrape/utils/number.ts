@@ -107,6 +107,21 @@ const normalizeRawName = (rawName: string, escapeStrings: string[] = []): string
 const normalizePartProbeName = (rawName: string, escapeStrings: string[] = []): string =>
   normalizeName(rawName, escapeStrings, { stripBarePart: false });
 
+const findSuffixAfterNumber = (stem: string, number: string, escapeStrings: string[] = []): string | undefined => {
+  const normalizedProbe = normalizePartProbeName(stem, escapeStrings);
+  const normalizedNumber = number.trim().toUpperCase();
+  if (!normalizedNumber) {
+    return undefined;
+  }
+
+  const numberIndex = normalizedProbe.indexOf(normalizedNumber);
+  if (numberIndex < 0) {
+    return undefined;
+  }
+
+  return normalizedProbe.slice(numberIndex + normalizedNumber.length);
+};
+
 const normalizeNumber = (value: string): string => {
   return value
     .replace(/^FC-/u, "FC2-")
@@ -114,54 +129,53 @@ const normalizeNumber = (value: string): string => {
     .replace(/^[-_.\s]+|[-_.\s]+$/gu, "");
 };
 
+type NumberExtractionRule = {
+  pattern: RegExp;
+  format?: (match: RegExpMatchArray) => string;
+};
+
+const joinFirstTwoCaptures = (match: RegExpMatchArray): string => `${match[1]}-${match[2]}`;
+const formatFirstCapture = (prefix: string): NonNullable<NumberExtractionRule["format"]> => {
+  return (match) => `${prefix}-${match[1]}`;
+};
+
+const ORDERED_NUMBER_EXTRACTION_RULES: NumberExtractionRule[] = [
+  { pattern: /(FC2-\d{5,})/iu },
+  { pattern: /(FC2\d{5,})/iu },
+  { pattern: /(HEYZO-\d{3,})/iu },
+  { pattern: /(HEYZO\d{3,})/iu },
+  { pattern: /(TH101-\d{3,}-\d{5,})/iu },
+  { pattern: /H0930-?([A-Z]{2,}\d{2,}[A-Z]?)/iu, format: formatFirstCapture("H0930") },
+  { pattern: /(T28-?\d{3,})/iu },
+  { pattern: /(S2M[BD]*-\d{3,})/iu },
+  { pattern: /(MCB3D[BD]*-\d{2,})/iu },
+  { pattern: /(KIN8(?:TENGOKU)?-?\d{3,})/iu },
+  { pattern: /(CW3D2D?BD-?\d{2,})/iu },
+  { pattern: /(MMR-?[A-Z]{2,}-?\d+[A-Z]*)/iu },
+  { pattern: /(XXX-AV-\d{4,})/iu },
+  { pattern: /(MKY-[A-Z]+-\d{3,})/iu },
+  { pattern: /([A-Z]{2,})00(\d{3})/iu, format: joinFirstTwoCaptures },
+  { pattern: /(\d{2,}[A-Z]{2,}-\d{2,}[A-Z]?)/iu },
+  { pattern: /((?=[A-Z0-9]*[A-Z])[A-Z0-9]{2,}-\d{2,}[A-Z]?)/iu },
+  { pattern: /([A-Z]+-[A-Z]\d+)/iu },
+  { pattern: /(\d{2,}[-_]\d{2,})/iu },
+  { pattern: /(\d{3,}-[A-Z]{3,})/iu },
+  { pattern: /(?:^|[^A-Z])(N\d{4})(?:[^A-Z]|$)/iu },
+  { pattern: /H_\d{3,}([A-Z]{2,})(\d{2,})/iu, format: joinFirstTwoCaptures },
+  { pattern: /([A-Z]{3,}).*?(\d{2,})/iu, format: joinFirstTwoCaptures },
+  { pattern: /([A-Z]{2,}).*?(\d{3,})/iu, format: joinFirstTwoCaptures },
+];
+
 export const extractNumber = (fileName: string, escapeStrings: string[] = []): string => {
   const normalized = normalizeRawName(fileName, escapeStrings);
 
-  const orderedPatterns: RegExp[] = [
-    /(FC2-\d{5,})/iu,
-    /(FC2\d{5,})/iu,
-    /(HEYZO-\d{3,})/iu,
-    /(HEYZO\d{3,})/iu,
-    /(TH101-\d{3,}-\d{5,})/iu,
-    /(T28-?\d{3,})/iu,
-    /(S2M[BD]*-\d{3,})/iu,
-    /(MCB3D[BD]*-\d{2,})/iu,
-    /(KIN8(?:TENGOKU)?-?\d{3,})/iu,
-    /(CW3D2D?BD-?\d{2,})/iu,
-    /(MMR-?[A-Z]{2,}-?\d+[A-Z]*)/iu,
-    /(XXX-AV-\d{4,})/iu,
-    /(MKY-[A-Z]+-\d{3,})/iu,
-    /([A-Z]{2,})00(\d{3})/iu,
-    /(\d{2,}[A-Z]{2,}-\d{2,}[A-Z]?)/iu,
-    /((?=[A-Z0-9]*[A-Z])[A-Z0-9]{2,}-\d{2,}[A-Z]?)/iu,
-    /([A-Z]+-[A-Z]\d+)/iu,
-    /(\d{2,}[-_]\d{2,})/iu,
-    /(\d{3,}-[A-Z]{3,})/iu,
-    /(?:^|[^A-Z])(N\d{4})(?:[^A-Z]|$)/iu,
-    /H_\d{3,}([A-Z]{2,})(\d{2,})/iu,
-    /([A-Z]{3,}).*?(\d{2,})/iu,
-    /([A-Z]{2,}).*?(\d{3,})/iu,
-  ];
-
-  for (const pattern of orderedPatterns) {
+  for (const { pattern, format } of ORDERED_NUMBER_EXTRACTION_RULES) {
     const match = normalized.match(pattern);
     if (!match) {
       continue;
     }
 
-    if (pattern.source === "([A-Z]{2,})00(\\d{3})") {
-      return normalizeNumber(`${match[1]}-${match[2]}`);
-    }
-
-    if (pattern.source === "H_\\d{3,}([A-Z]{2,})(\\d{2,})") {
-      return normalizeNumber(`${match[1]}-${match[2]}`);
-    }
-
-    if (pattern.source === "([A-Z]{3,}).*?(\\d{2,})" || pattern.source === "([A-Z]{2,}).*?(\\d{3,})") {
-      return normalizeNumber(`${match[1]}-${match[2]}`);
-    }
-
-    return normalizeNumber(match[1] ?? match[0]);
+    return normalizeNumber(format ? format(match) : (match[1] ?? match[0]));
   }
 
   return normalizeNumber(normalized);
@@ -203,18 +217,11 @@ const detectCircledPart = (
     return undefined;
   }
 
-  const normalizedProbe = normalizePartProbeName(stem, escapeStrings);
-  const normalizedNumber = number.trim().toUpperCase();
-  if (!normalizedNumber) {
+  const remainder = findSuffixAfterNumber(stem, number, escapeStrings);
+  if (!remainder) {
     return undefined;
   }
 
-  const numberIndex = normalizedProbe.indexOf(normalizedNumber);
-  if (numberIndex < 0) {
-    return undefined;
-  }
-
-  const remainder = normalizedProbe.slice(numberIndex + normalizedNumber.length);
   if (!TRAILING_FC2_CIRCLED_PART_SUFFIX_PATTERN.test(remainder)) {
     return undefined;
   }
@@ -250,18 +257,11 @@ const detectBareNumericPart = (
   number: string,
   escapeStrings: string[] = [],
 ): FileInfo["part"] | undefined => {
-  const normalizedProbe = normalizePartProbeName(stem, escapeStrings);
-  const normalizedNumber = number.trim().toUpperCase();
-  if (!normalizedNumber) {
+  const remainder = findSuffixAfterNumber(stem, number, escapeStrings);
+  if (!remainder) {
     return undefined;
   }
 
-  const numberIndex = normalizedProbe.indexOf(normalizedNumber);
-  if (numberIndex < 0) {
-    return undefined;
-  }
-
-  const remainder = normalizedProbe.slice(numberIndex + normalizedNumber.length);
   const remainderMatch = remainder.match(/^-([1-9])$/u);
   if (!remainderMatch) {
     return undefined;
@@ -283,18 +283,11 @@ const detectAlphabeticPart = (
   number: string,
   escapeStrings: string[] = [],
 ): FileInfo["part"] | undefined => {
-  const normalizedProbe = normalizePartProbeName(stem, escapeStrings);
-  const normalizedNumber = number.trim().toUpperCase();
-  if (!normalizedNumber) {
+  const remainder = findSuffixAfterNumber(stem, number, escapeStrings);
+  if (!remainder) {
     return undefined;
   }
 
-  const numberIndex = normalizedProbe.indexOf(normalizedNumber);
-  if (numberIndex < 0) {
-    return undefined;
-  }
-
-  const remainder = normalizedProbe.slice(numberIndex + normalizedNumber.length);
   if (!TRAILING_ALPHA_PART_PATTERN.test(remainder)) {
     return undefined;
   }

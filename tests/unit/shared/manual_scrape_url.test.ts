@@ -47,6 +47,15 @@ describe("validateManualScrapeUrl", () => {
         detailUrl: "https://tv.dmm.co.jp/list/?content=ssni00103&i3_ref=search",
       },
     });
+    expect(validateManualScrapeUrl("https://www.h0930.com/moviepages/gol205/index.html")).toEqual({
+      valid: true,
+      route: {
+        site: Website.H0930,
+        mode: "detail",
+        url: "https://www.h0930.com/moviepages/gol205/index.html",
+        detailUrl: "https://www.h0930.com/moviepages/gol205/index.html",
+      },
+    });
   });
 
   it("rejects supported hosts with unsupported paths using the required message", () => {
