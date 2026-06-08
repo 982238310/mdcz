@@ -15,7 +15,7 @@ export const currentConfigQueryOptions = () =>
   queryOptions({
     queryKey: CURRENT_CONFIG_QUERY_KEY,
     staleTime: 30_000,
-    queryFn: async () => await api.config.read(),
+    queryFn: async (): Promise<Configuration> => await api.config.read(),
   });
 
 export const defaultConfigQueryOptions = () =>
@@ -23,14 +23,14 @@ export const defaultConfigQueryOptions = () =>
     queryKey: DEFAULT_CONFIG_QUERY_KEY,
     staleTime: Number.POSITIVE_INFINITY,
     gcTime: Number.POSITIVE_INFINITY,
-    queryFn: async () => await api.config.defaults(),
+    queryFn: async (): Promise<Configuration> => await api.config.defaults(),
   });
 
 export const configProfilesQueryOptions = () =>
   queryOptions({
     queryKey: CONFIG_PROFILES_QUERY_KEY,
     staleTime: 30_000,
-    queryFn: async () => await api.config.profiles.list(),
+    queryFn: async (): Promise<ConfigProfilesOutput> => await api.config.profiles.list(),
   });
 
 type CurrentConfigQueryOptions = Omit<

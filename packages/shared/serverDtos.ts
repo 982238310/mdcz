@@ -405,8 +405,8 @@ const maintenanceFieldDiffSchema = z
     field: z.string(),
     kind: z.enum(["value", "image", "imageCollection"]),
     label: z.string(),
-    newValue: z.unknown(),
-    oldValue: z.unknown(),
+    newValue: z.any(),
+    oldValue: z.any(),
   })
   .passthrough();
 
@@ -908,11 +908,11 @@ export const configPathInputSchema = z
 
 export type ConfigPathInput = z.infer<typeof configPathInputSchema>;
 
-export const configPreviewInputSchema = z.record(z.string(), z.unknown());
+export const configPreviewInputSchema = z.record(z.string(), z.any());
 
 export type ConfigPreviewInput = DeepPartial<Configuration>;
 
-export const configUpdateInputSchema = z.record(z.string(), z.unknown());
+export const configUpdateInputSchema = z.record(z.string(), z.any());
 
 export type ConfigUpdateInput = DeepPartial<Configuration>;
 
@@ -1057,7 +1057,7 @@ export const toolExecuteResponseSchema = z.object({
   toolId: z.string(),
   ok: z.boolean(),
   message: z.string(),
-  data: z.unknown().optional(),
+  data: z.any().optional(),
 });
 
 export type ToolExecuteResponse = z.infer<typeof toolExecuteResponseSchema>;

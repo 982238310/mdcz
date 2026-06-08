@@ -16,6 +16,7 @@
     "@mdcz/views": "workspace:*",
     "@tanstack/react-query": "^5.90.20",
     "@tanstack/react-router": "^1.159.4",
+    "@trpc/client": "^11.17.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.563.0",
@@ -28,6 +29,7 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@mdcz/server": "workspace:*",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^24.3.1",
     "@types/react": "^19.2.14",

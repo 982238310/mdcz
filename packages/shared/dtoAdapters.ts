@@ -39,9 +39,21 @@ export const scrapeResultDtoToDetailScrapeResult = (result: ScrapeResultDto): Sc
   crawlerData: result.crawlerData ?? emptyCrawlerData(result.relativePath),
 });
 
-const toMaintenanceFieldDiffs = (diffs: unknown): FieldDiff[] => (Array.isArray(diffs) ? (diffs as FieldDiff[]) : []);
+const toMaintenanceFieldDiffs = (diffs: unknown): FieldDiff[] =>
+  Array.isArray(diffs)
+    ? (diffs.map((diff) => ({
+        ...(diff as Record<string, unknown>),
+        newValue: (diff as { newValue?: unknown }).newValue,
+        oldValue: (diff as { oldValue?: unknown }).oldValue,
+      })) as FieldDiff[])
+    : [];
 
-export const maintenancePreviewDtoToPreviewItem = (item: MaintenancePreviewItemDto): MaintenancePreviewItem => ({
+export const maintenancePreviewDtoToPreviewItem = (
+  item: Omit<MaintenancePreviewItemDto, "fieldDiffs" | "unchangedFieldDiffs"> & {
+    fieldDiffs: unknown[];
+    unchangedFieldDiffs: unknown[];
+  },
+): MaintenancePreviewItem => ({
   fileId: `${item.rootId}:${item.relativePath}`,
   previewId: item.id,
   taskId: item.taskId,

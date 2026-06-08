@@ -2,7 +2,6 @@ import { createClient } from "@egoist/tipc/renderer";
 import type { Configuration } from "@mdcz/shared/config";
 import type { Website } from "@mdcz/shared/enums";
 import { IpcChannel } from "@mdcz/shared/IpcChannel";
-import type { OverviewOutputSummary, OverviewRecentAcquisitionItem } from "@mdcz/shared/ipc-contracts/overviewContract";
 import type { IpcRouterContract } from "@mdcz/shared/ipcContract";
 import type {
   ButtonStatusPayload,
@@ -12,26 +11,16 @@ import type {
   ScrapeInfoPayload,
   ShortcutPayload,
 } from "@mdcz/shared/ipcEvents";
-import type {
-  AppInfo,
-  BatchTranslateApplyResultItem,
-  BatchTranslateScanItem,
-  TranslateTestLlmInput,
-  WatermarkDirectoryInfo,
-} from "@mdcz/shared/ipcTypes";
-import type { LibraryListInput, LibraryListResponse } from "@mdcz/shared/serverDtos";
+import type { BatchTranslateScanItem, TranslateTestLlmInput } from "@mdcz/shared/ipcTypes";
+import type { LibraryListInput } from "@mdcz/shared/serverDtos";
 import type {
   CrawlerData,
   LocalScanEntry,
   MaintenanceCommitItem,
   MaintenanceItemResult,
   MaintenancePresetId,
-  MaintenancePreviewResult,
-  MaintenanceStatus,
-  MediaCandidate,
   ScrapeResult,
   UncensoredConfirmItem,
-  UncensoredConfirmResponse,
 } from "@mdcz/shared/types";
 
 type Unsubscribe = () => void;
@@ -42,33 +31,27 @@ const client = createClient<IpcRouterContract>({
 
 export const ipc = {
   app: {
-    info: () => client[IpcChannel.App_Info](undefined) as Promise<AppInfo>,
+    info: () => client[IpcChannel.App_Info](undefined),
     openExternal: (url: string) => client[IpcChannel.App_OpenExternal]({ url }),
     playMedia: (path: string) => client[IpcChannel.App_PlayMedia]({ path }),
     showItemInFolder: (path: string) => client[IpcChannel.App_ShowItemInFolder]({ path }),
-    ensureWatermarkDirectory: () =>
-      client[IpcChannel.App_EnsureWatermarkDirectory](undefined) as Promise<WatermarkDirectoryInfo>,
+    ensureWatermarkDirectory: () => client[IpcChannel.App_EnsureWatermarkDirectory](undefined),
     openWatermarkDirectory: () => client[IpcChannel.App_OpenWatermarkDirectory](undefined),
     relaunch: () => client[IpcChannel.App_Relaunch](undefined),
     syncTitleBarTheme: (isDark: boolean) => client[IpcChannel.App_SyncTitleBarTheme]({ isDark }),
   },
   overview: {
-    getRecentAcquisitions: () =>
-      client[IpcChannel.Overview_GetRecentAcquisitions](undefined) as Promise<{
-        items: OverviewRecentAcquisitionItem[];
-      }>,
-    removeRecentAcquisition: (id: string) =>
-      client[IpcChannel.Overview_RemoveRecentAcquisition]({ id }) as Promise<{ success: true }>,
-    getOutputSummary: () => client[IpcChannel.Overview_GetOutputSummary](undefined) as Promise<OverviewOutputSummary>,
+    getRecentAcquisitions: () => client[IpcChannel.Overview_GetRecentAcquisitions](undefined),
+    removeRecentAcquisition: (id: string) => client[IpcChannel.Overview_RemoveRecentAcquisition]({ id }),
+    getOutputSummary: () => client[IpcChannel.Overview_GetOutputSummary](undefined),
   },
   library: {
-    list: (input?: LibraryListInput) => client[IpcChannel.Library_List](input) as Promise<LibraryListResponse>,
-    delete: (input: { deleteMediaFiles?: boolean; id: string }) =>
-      client[IpcChannel.Library_Delete](input) as Promise<{ success: true }>,
+    list: (input?: LibraryListInput) => client[IpcChannel.Library_List](input),
+    delete: (input: { deleteMediaFiles?: boolean; id: string }) => client[IpcChannel.Library_Delete](input),
   },
   config: {
     get: (path?: string) => client[IpcChannel.Config_Get]({ path }),
-    getDefaults: () => client[IpcChannel.Config_GetDefaults](undefined) as Promise<Configuration>,
+    getDefaults: () => client[IpcChannel.Config_GetDefaults](undefined),
     save: (config?: Partial<Configuration>) => client[IpcChannel.Config_Save]({ config }),
     list: () => client[IpcChannel.Config_List](undefined),
     reset: (path?: string) => client[IpcChannel.Config_Reset]({ path }),
@@ -77,19 +60,9 @@ export const ipc = {
     createProfile: (name: string) => client[IpcChannel.Config_CreateProfile]({ name }),
     switchProfile: (name: string) => client[IpcChannel.Config_SwitchProfile]({ name }),
     deleteProfile: (name: string) => client[IpcChannel.Config_DeleteProfile]({ name }),
-    exportProfile: (name: string) =>
-      client[IpcChannel.Config_ExportProfile]({ name }) as Promise<{
-        canceled: boolean;
-        filePath: string | null;
-        profileName: string;
-      }>,
+    exportProfile: (name: string) => client[IpcChannel.Config_ExportProfile]({ name }),
     importProfile: (filePath: string, name: string, overwrite = false) =>
-      client[IpcChannel.Config_ImportProfile]({ filePath, name, overwrite }) as Promise<{
-        success: true;
-        profileName: string;
-        overwritten: boolean;
-        active: boolean;
-      }>,
+      client[IpcChannel.Config_ImportProfile]({ filePath, name, overwrite }),
   },
   scraper: {
     start: (mode: "single" | "selection", paths: string[]) => client[IpcChannel.Scraper_Start]({ mode, paths }),
@@ -104,36 +77,23 @@ export const ipc = {
     getRecoverableSession: () => client[IpcChannel.Scraper_GetRecoverableSession](undefined),
     resolveRecoverableSession: (action: "recover" | "discard") =>
       client[IpcChannel.Scraper_ResolveRecoverableSession]({ action }),
-    confirmUncensored: (items: UncensoredConfirmItem[]) =>
-      client[IpcChannel.Scraper_ConfirmUncensored]({ items }) as Promise<UncensoredConfirmResponse>,
+    confirmUncensored: (items: UncensoredConfirmItem[]) => client[IpcChannel.Scraper_ConfirmUncensored]({ items }),
   },
   crawler: {
     test: (site: Website, number: string) => client[IpcChannel.Crawler_Test]({ site, number }),
     listSites: () => client[IpcChannel.Crawler_ListSites](undefined),
-    probeSiteConnectivity: (site: Website) =>
-      client[IpcChannel.Crawler_ProbeSiteConnectivity]({ site }) as Promise<{
-        ok: boolean;
-        message: string;
-        latencyMs: number;
-        status?: number;
-        resolvedUrl?: string;
-      }>,
+    probeSiteConnectivity: (site: Website) => client[IpcChannel.Crawler_ProbeSiteConnectivity]({ site }),
   },
   network: {
     checkCookies: () => client[IpcChannel.Network_CheckCookies](undefined),
   },
   translate: {
-    testLlm: (input: TranslateTestLlmInput) =>
-      client[IpcChannel.Translate_TestLlm](input) as Promise<{ success: boolean; message: string }>,
+    testLlm: (input: TranslateTestLlmInput) => client[IpcChannel.Translate_TestLlm](input),
   },
   file: {
     listEntries: (dirPath: string) => client[IpcChannel.File_ListEntries]({ dirPath }),
-    listMediaCandidates: (dirPath: string) =>
-      client[IpcChannel.File_ListMediaCandidates]({ dirPath }) as Promise<{
-        candidates: MediaCandidate[];
-        supportedExtensions: string[];
-      }>,
-    exists: (path: string) => client[IpcChannel.File_Exists]({ path }) as Promise<{ exists: boolean }>,
+    listMediaCandidates: (dirPath: string) => client[IpcChannel.File_ListMediaCandidates]({ dirPath }),
+    exists: (path: string) => client[IpcChannel.File_Exists]({ path }),
     browse: (type: "file" | "directory", filters?: Array<{ name: string; extensions: string[] }>) =>
       client[IpcChannel.File_Browse]({ type, filters }),
     delete: (filePaths: string[]) => client[IpcChannel.File_Delete]({ filePaths }),
@@ -160,25 +120,21 @@ export const ipc = {
       client[IpcChannel.Tool_AmazonPosterLookup]({ nfoPath, title }),
     amazonPosterApply: (items: Array<{ nfoPath: string; amazonPosterUrl: string }>) =>
       client[IpcChannel.Tool_AmazonPosterApply]({ items }),
-    batchTranslateScan: (directory: string) =>
-      client[IpcChannel.Tool_BatchTranslateScan]({ directory }) as Promise<{ items: BatchTranslateScanItem[] }>,
-    batchTranslateApply: (items: BatchTranslateScanItem[]) =>
-      client[IpcChannel.Tool_BatchTranslateApply]({ items }) as Promise<{ results: BatchTranslateApplyResultItem[] }>,
+    batchTranslateScan: (directory: string) => client[IpcChannel.Tool_BatchTranslateScan]({ directory }),
+    batchTranslateApply: (items: BatchTranslateScanItem[]) => client[IpcChannel.Tool_BatchTranslateApply]({ items }),
     toggleDevTools: () => client[IpcChannel.Tool_ToggleDevTools](undefined),
   },
   maintenance: {
-    scan: (dirPath: string) =>
-      client[IpcChannel.Maintenance_Scan]({ dirPath }) as Promise<{ entries: LocalScanEntry[] }>,
-    scanFiles: (filePaths: string[]) =>
-      client[IpcChannel.Maintenance_Scan]({ filePaths }) as Promise<{ entries: LocalScanEntry[] }>,
+    scan: (dirPath: string) => client[IpcChannel.Maintenance_Scan]({ dirPath }),
+    scanFiles: (filePaths: string[]) => client[IpcChannel.Maintenance_Scan]({ filePaths }),
     preview: (entries: LocalScanEntry[], presetId: MaintenancePresetId) =>
-      client[IpcChannel.Maintenance_Preview]({ entries, presetId }) as Promise<MaintenancePreviewResult>,
+      client[IpcChannel.Maintenance_Preview]({ entries, presetId }),
     execute: (items: MaintenanceCommitItem[], presetId: MaintenancePresetId) =>
       client[IpcChannel.Maintenance_Execute]({ items, presetId }),
     stop: () => client[IpcChannel.Maintenance_Stop](undefined),
     pause: () => client[IpcChannel.Maintenance_Pause](undefined),
     resume: () => client[IpcChannel.Maintenance_Resume](undefined),
-    getStatus: () => client[IpcChannel.Maintenance_GetStatus](undefined) as Promise<MaintenanceStatus>,
+    getStatus: () => client[IpcChannel.Maintenance_GetStatus](undefined),
   },
   on: {
     log: (callback: (payload: LogPayload) => void): Unsubscribe => window.api.on(IpcChannel.Event_Log, callback),

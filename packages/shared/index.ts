@@ -20,7 +20,6 @@ export * from "./mediaExtensions";
 export * from "./mediaIdentity";
 export * from "./posterBadges";
 export * from "./r18";
-export * from "./serverApi";
 export * from "./serverDtos";
 export * from "./settingsRegistry";
 export * from "./toolCatalog";

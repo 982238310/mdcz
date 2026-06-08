@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { api } from "./client";
+import { api, setAdminToken } from "./client";
 
 describe("web api client", () => {
   const originalFetch = globalThis.fetch;
@@ -40,13 +40,28 @@ describe("web api client", () => {
     });
   });
 
-  it("sends object input for config calls without an explicit path", async () => {
-    fetchMock.mockResolvedValue(new Response(JSON.stringify({ result: { data: {} } }), { status: 200 }));
+  it("sends typed tRPC calls for config calls without an explicit path", async () => {
+    fetchMock.mockImplementation(async () => new Response(JSON.stringify({ result: { data: {} } }), { status: 200 }));
 
     await api.config.read();
     await api.config.reset();
 
-    expect(JSON.parse(fetchMock.mock.calls[0]?.[1]?.body as string)).toEqual({});
+    expect(fetchMock.mock.calls[0]?.[0]).toBe("http://127.0.0.1:3838/trpc/config.read");
+    expect(fetchMock.mock.calls[0]?.[1]?.method).toBe("POST");
+    expect(fetchMock.mock.calls[0]?.[1]?.body).toBeUndefined();
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("http://127.0.0.1:3838/trpc/config.reset");
+    expect(fetchMock.mock.calls[1]?.[1]?.method).toBe("POST");
     expect(JSON.parse(fetchMock.mock.calls[1]?.[1]?.body as string)).toEqual({});
+  });
+
+  it("adds the bearer token to tRPC requests", async () => {
+    fetchMock.mockResolvedValue(new Response(JSON.stringify({ result: { data: {} } }), { status: 200 }));
+    setAdminToken("token-1");
+
+    await api.health.read();
+
+    expect(fetchMock.mock.calls[0]?.[1]?.headers).toMatchObject({
+      authorization: "Bearer token-1",
+    });
   });
 });

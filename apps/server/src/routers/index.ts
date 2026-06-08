@@ -118,14 +118,14 @@ export const appRouter = t.router({
       try {
         return await ctx.services.config.import(input.content);
       } catch (error) {
-        mapConfigError(error);
+        return mapConfigError(error);
       }
     }),
     previewNaming: protectedProcedure.input(configPreviewInputSchema).mutation(async ({ ctx, input }) => {
       try {
         return await ctx.services.config.previewNaming(input);
       } catch (error) {
-        mapConfigError(error);
+        return mapConfigError(error);
       }
     }),
     reset: protectedProcedure
@@ -137,7 +137,7 @@ export const appRouter = t.router({
         await syncMediaRootFromConfig(ctx.services, config);
         return config;
       } catch (error) {
-        mapConfigError(error);
+        return mapConfigError(error);
       }
     }),
     save: protectedProcedure.input(configUpdateInputSchema).mutation(async ({ ctx, input }) => {
@@ -146,7 +146,7 @@ export const appRouter = t.router({
         await syncMediaRootFromConfig(ctx.services, config);
         return config;
       } catch (error) {
-        mapConfigError(error);
+        return mapConfigError(error);
       }
     }),
     profiles: t.router({
@@ -167,7 +167,7 @@ export const appRouter = t.router({
         try {
           return await ctx.services.config.importProfile(input);
         } catch (error) {
-          mapConfigError(error);
+          return mapConfigError(error);
         }
       }),
     }),

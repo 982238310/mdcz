@@ -1,4 +1,7 @@
-import type { ServerApiContract, ServerApiProcedure, TaskRealtimeEventDto, WebTaskUpdateDto } from "@mdcz/shared";
+import type { AppRouter } from "@mdcz/server/router";
+import type { TaskRealtimeEventDto, WebTaskUpdateDto } from "@mdcz/shared";
+import type { Configuration } from "@mdcz/shared/config";
+import { createTRPCClient, httpLink, type TRPCClient } from "@trpc/client";
 
 const DEFAULT_API_BASE = "http://127.0.0.1:3838";
 const API_BASE_KEY = "mdcz-web-api-base";
@@ -10,9 +13,11 @@ export const setApiBase = (baseUrl: string): void => {
   const trimmed = baseUrl.trim().replace(/\/+$/u, "");
   if (!trimmed) {
     localStorage.removeItem(API_BASE_KEY);
+    trpcCache = null;
     return;
   }
   localStorage.setItem(API_BASE_KEY, trimmed);
+  trpcCache = null;
 };
 
 export const getAdminToken = (): string | null => localStorage.getItem(TOKEN_KEY);
@@ -57,193 +62,203 @@ export const getLibraryAssetSrc = (input: { rootId?: string | null; path: string
   return url.toString();
 };
 
-const procedurePath = (procedure: ServerApiProcedure): string => procedure.replace(".", ".");
-
-const request = async <T>(procedure: ServerApiProcedure, input?: unknown): Promise<T> => {
+const getAuthorizationHeaders = (): Record<string, string> => {
   const token = getAdminToken();
-  const response = await fetch(`${getApiBase()}/trpc/${procedurePath(procedure)}`, {
-    method: "POST",
-    headers: {
-      "content-type": "application/json",
-      ...(token ? { authorization: `Bearer ${token}` } : {}),
-    },
-    body: JSON.stringify(input ?? null),
-  });
-  const payload = (await response.json().catch(() => ({}))) as { result?: { data?: T }; error?: { message?: string } };
-  if (!response.ok) {
-    throw new Error(payload.error?.message ?? `Request failed: ${response.status}`);
+  if (!token) {
+    return {};
   }
-  return payload.result?.data as T;
+  return { authorization: `Bearer ${token}` };
 };
 
-export const api: ServerApiContract = {
+let trpcCache: { baseUrl: string; client: TRPCClient<AppRouter> } | null = null;
+
+const getTrpc = (): TRPCClient<AppRouter> => {
+  const baseUrl = getApiBase();
+  if (trpcCache?.baseUrl === baseUrl) {
+    return trpcCache.client;
+  }
+  const client = createTRPCClient<AppRouter>({
+    links: [
+      httpLink({
+        headers: getAuthorizationHeaders,
+        methodOverride: "POST",
+        url: `${baseUrl}/trpc`,
+      }),
+    ],
+  });
+  trpcCache = { baseUrl, client };
+  return client;
+};
+
+type TrpcClient = TRPCClient<AppRouter>;
+type FacadeProcedure<TProcedure> = TProcedure extends {
+  query: (input: infer TInput, ...args: infer TRest) => infer TOutput;
+}
+  ? undefined extends TInput
+    ? (input?: TInput, ...args: TRest) => TOutput
+    : (input: TInput, ...args: TRest) => TOutput
+  : TProcedure extends { mutate: (input: infer TInput, ...args: infer TRest) => infer TOutput }
+    ? undefined extends TInput
+      ? (input?: TInput, ...args: TRest) => TOutput
+      : (input: TInput, ...args: TRest) => TOutput
+    : TProcedure extends object
+      ? { [TKey in keyof TProcedure as TKey extends symbol ? never : TKey]: FacadeProcedure<TProcedure[TKey]> }
+      : never;
+type TrpcFacade = FacadeProcedure<TrpcClient>;
+type WebApiFacade = Omit<TrpcFacade, "config" | "maintenance"> & {
+  config: Omit<TrpcFacade["config"], "read"> & {
+    read: () => Promise<Configuration>;
+  };
+  maintenance: Omit<TrpcFacade["maintenance"], "execute"> & {
+    apply: TrpcFacade["maintenance"]["execute"];
+  };
+};
+
+export const api: WebApiFacade = {
   auth: {
-    setup: () => request("auth.setup"),
+    setup: () => getTrpc().auth.setup.query(undefined),
     login: async (input) => {
-      const session = await request<Awaited<ReturnType<ServerApiContract["auth"]["login"]>>>("auth.login", input);
+      const session = await getTrpc().auth.login.mutate(input);
       setAdminToken(session.token);
       return session;
     },
     logout: async () => {
-      const session = await request<Awaited<ReturnType<ServerApiContract["auth"]["logout"]>>>("auth.logout");
+      const session = await getTrpc().auth.logout.mutate(undefined);
       setAdminToken(undefined);
       return session;
     },
-    status: () => request("auth.status"),
+    status: () => getTrpc().auth.status.query(undefined),
   },
   app: {
-    ensureWatermarkDirectory: () => request("app.ensureWatermarkDirectory"),
+    ensureWatermarkDirectory: () => getTrpc().app.ensureWatermarkDirectory.mutate(undefined),
   },
   browser: {
-    list: (input) => request("browser.list", input),
+    list: (input) => getTrpc().browser.list.query(input),
   },
   crawler: {
-    listSites: () => request("crawler.listSites"),
-    probeSiteConnectivity: (input) => request("crawler.probeSiteConnectivity", input),
+    listSites: () => getTrpc().crawler.listSites.query(undefined),
+    probeSiteConnectivity: (input) => getTrpc().crawler.probeSiteConnectivity.mutate(input),
   },
   network: {
-    checkCookies: () => request("network.checkCookies"),
+    checkCookies: () => getTrpc().network.checkCookies.mutate(undefined),
   },
   translate: {
-    testLlm: (input) => request("translate.testLlm", input),
+    testLlm: (input) => getTrpc().translate.testLlm.mutate(input),
   },
   serverPaths: {
-    suggest: (input) => request("serverPaths.suggest", input),
+    suggest: (input) => getTrpc().serverPaths.suggest.query(input),
   },
   config: {
-    defaults: () => request("config.defaults"),
-    export: () => request("config.export"),
-    import: (input) => request("config.import", input),
-    read: () => request("config.read", {}),
-    previewNaming: (input) => request("config.previewNaming", input),
-    reset: (input) => request("config.reset", input ?? {}),
-    update: (input) => request("config.update", input),
-    save: (input) => request("config.save", input),
+    defaults: () => getTrpc().config.defaults.query(undefined),
+    export: () => getTrpc().config.export.query(undefined),
+    import: (input) => getTrpc().config.import.mutate(input),
+    read: async () => (await getTrpc().config.read.query(undefined)) as Configuration,
+    previewNaming: (input) => getTrpc().config.previewNaming.mutate(input),
+    reset: (input) => getTrpc().config.reset.mutate(input ?? {}),
+    update: (input) => getTrpc().config.update.mutate(input),
+    save: (input) => getTrpc().config.save.mutate(input),
     profiles: {
-      list: () => request("config.profiles.list"),
-      create: (input) => request("config.profiles.create", input),
-      switch: (input) => request("config.profiles.switch", input),
-      delete: (input) => request("config.profiles.delete", input),
-      export: (input) => request("config.profiles.export", input),
-      import: (input) => request("config.profiles.import", input),
+      list: () => getTrpc().config.profiles.list.query(undefined),
+      create: (input) => getTrpc().config.profiles.create.mutate(input),
+      switch: (input) => getTrpc().config.profiles.switch.mutate(input),
+      delete: (input) => getTrpc().config.profiles.delete.mutate(input),
+      export: (input) => getTrpc().config.profiles.export.mutate(input),
+      import: (input) => getTrpc().config.profiles.import.mutate(input),
     },
   },
   health: {
-    read: () => request("health.read"),
+    read: () => getTrpc().health.read.query(undefined),
   },
   system: {
-    about: () => request("system.about"),
+    about: () => getTrpc().system.about.query(undefined),
   },
   logs: {
-    list: (input) => request("logs.list", input),
-    clearRuntime: () => request("logs.clearRuntime"),
+    list: (input) => getTrpc().logs.list.query(input),
+    clearRuntime: () => getTrpc().logs.clearRuntime.mutate(undefined),
   },
   maintenance: {
-    scanSelectedFiles: (input) => request("maintenance.scanSelectedFiles", input),
-    apply: (input) => request("maintenance.execute", input),
-    pause: (input) => request("maintenance.pause", input),
-    preview: (input) => request("maintenance.preview", input),
-    recover: () => request("maintenance.recover"),
-    resume: (input) => request("maintenance.resume", input),
-    start: (input) => request("maintenance.start", input),
-    stop: (input) => request("maintenance.stop", input),
+    scanSelectedFiles: (input) => getTrpc().maintenance.scanSelectedFiles.query(input),
+    apply: (input) => getTrpc().maintenance.execute.mutate(input),
+    pause: (input) => getTrpc().maintenance.pause.mutate(input),
+    preview: (input) => getTrpc().maintenance.preview.query(input),
+    recover: () => getTrpc().maintenance.recover.query(undefined),
+    resume: (input) => getTrpc().maintenance.resume.mutate(input),
+    start: (input) => getTrpc().maintenance.start.mutate(input),
+    stop: (input) => getTrpc().maintenance.stop.mutate(input),
   },
   library: {
-    list: (input) => request("library.list", input),
-    search: (input) => request("library.search", input),
-    detail: (input) => request("library.detail", input),
-    refresh: (input) => request("library.refresh", input),
-    rescan: (input) => request("library.rescan", input),
-    relink: (input) => request("library.relink", input),
-    delete: (input) => request("library.delete", input),
+    list: (input) => getTrpc().library.list.query(input),
+    search: (input) => getTrpc().library.search.query(input),
+    detail: (input) => getTrpc().library.detail.query(input),
+    refresh: (input) => getTrpc().library.refresh.mutate(input),
+    rescan: (input) => getTrpc().library.rescan.mutate(input),
+    relink: (input) => getTrpc().library.relink.mutate(input),
+    delete: (input) => getTrpc().library.delete.mutate(input),
   },
   overview: {
-    summary: () => request("overview.summary"),
-    removeRecentAcquisition: (input) => request("overview.removeRecentAcquisition", input),
+    summary: () => getTrpc().overview.summary.query(undefined),
+    removeRecentAcquisition: (input) => getTrpc().overview.removeRecentAcquisition.mutate(input),
   },
   mediaRoots: {
-    list: () => request("mediaRoots.list"),
+    list: () => getTrpc().mediaRoots.list.query(undefined),
   },
   persistence: {
-    status: () => request("persistence.status"),
+    status: () => getTrpc().persistence.status.query(undefined),
   },
   tools: {
-    catalog: () => request("tools.catalog"),
-    execute: (input) => request("tools.execute", input),
+    catalog: () => getTrpc().tools.catalog.query(undefined),
+    execute: (input) => getTrpc().tools.execute.mutate(input),
   },
   scans: {
-    candidates: (input) => request("scans.candidates", input),
-    detail: (input) => request("scans.detail", input),
-    events: (input) => request("scans.events", input),
-    list: () => request("scans.list"),
-    retry: (input) => request("scans.retry", input),
-    start: (input) => request("scans.start", input),
+    candidates: (input) => getTrpc().scans.candidates.query(input),
+    detail: (input) => getTrpc().scans.detail.query(input),
+    events: (input) => getTrpc().scans.events.query(input),
+    list: () => getTrpc().scans.list.query(undefined),
+    retry: (input) => getTrpc().scans.retry.mutate(input),
+    start: (input) => getTrpc().scans.start.mutate(input),
   },
   scrape: {
-    startSelectedFiles: (input) => request("scrape.startSelectedFiles", input),
-    deleteFile: (input) => request("scrape.deleteFile", input),
-    listResults: (input) => request("scrape.listResults", input),
-    getRecoverableSession: () => request("scrape.getRecoverableSession"),
-    nfoRead: (input) => request("scrape.nfoRead", input),
-    nfoWrite: (input) => request("scrape.nfoWrite", input),
-    pause: (input) => request("scrape.pause", input),
-    result: (input) => request("scrape.result", input),
-    resume: (input) => request("scrape.resume", input),
-    retry: (input) => request("scrape.retry", input),
-    confirmUncensored: (input) => request("scrape.confirmUncensored", input),
-    resolveRecoverableSession: (input) => request("scrape.resolveRecoverableSession", input),
-    start: (input) => request("scrape.start", input),
-    stop: (input) => request("scrape.stop", input),
+    startSelectedFiles: (input) => getTrpc().scrape.startSelectedFiles.mutate(input),
+    deleteFile: (input) => getTrpc().scrape.deleteFile.mutate(input),
+    listResults: (input) => getTrpc().scrape.listResults.query(input),
+    getRecoverableSession: () => getTrpc().scrape.getRecoverableSession.query(undefined),
+    nfoRead: (input) => getTrpc().scrape.nfoRead.query(input),
+    nfoWrite: (input) => getTrpc().scrape.nfoWrite.mutate(input),
+    pause: (input) => getTrpc().scrape.pause.mutate(input),
+    result: (input) => getTrpc().scrape.result.query(input),
+    resume: (input) => getTrpc().scrape.resume.mutate(input),
+    retry: (input) => getTrpc().scrape.retry.mutate(input),
+    confirmUncensored: (input) => getTrpc().scrape.confirmUncensored.mutate(input),
+    resolveRecoverableSession: (input) => getTrpc().scrape.resolveRecoverableSession.mutate(input),
+    start: (input) => getTrpc().scrape.start.mutate(input),
+    stop: (input) => getTrpc().scrape.stop.mutate(input),
   },
   tasks: {
-    detail: (input) => request("tasks.detail", input),
-    events: (input) => request("tasks.events", input),
-    list: () => request("tasks.list"),
-    retry: (input) => request("tasks.retry", input),
+    detail: (input) => getTrpc().tasks.detail.query(input),
+    events: (input) => getTrpc().tasks.events.query(input),
+    list: () => getTrpc().tasks.list.query(undefined),
+    retry: (input) => getTrpc().tasks.retry.mutate(input),
   },
   setup: {
     complete: async (input) => {
-      const session = await request<Awaited<ReturnType<ServerApiContract["setup"]["complete"]>>>(
-        "setup.complete",
-        input,
-      );
+      const session = await getTrpc().setup.complete.mutate(input);
       setAdminToken(session.token);
       return session;
     },
-    status: () => request("setup.status"),
+    status: () => getTrpc().setup.status.query(undefined),
   },
 };
 
-export const subscribeTaskUpdates = (onUpdate: (payload: WebTaskUpdateDto) => void): (() => void) => {
+const taskEventsUrl = (): string => {
   const token = getAdminToken();
-  const eventSource = new EventSource(
-    `${getApiBase()}/events/tasks${token ? `?token=${encodeURIComponent(token)}` : ""}`,
-  );
-  eventSource.addEventListener("task-update", (event) => {
-    onUpdate(JSON.parse(event.data) as WebTaskUpdateDto);
-  });
-  return () => eventSource.close();
+  return `${getApiBase()}/events/tasks${token ? `?token=${encodeURIComponent(token)}` : ""}`;
 };
 
-export const subscribeTaskEvents = (onEvent: (payload: TaskRealtimeEventDto) => void): (() => void) => {
-  const token = getAdminToken();
-  const eventSource = new EventSource(
-    `${getApiBase()}/events/tasks${token ? `?token=${encodeURIComponent(token)}` : ""}`,
-  );
-  eventSource.addEventListener("task-event", (event) => {
-    onEvent(JSON.parse(event.data) as TaskRealtimeEventDto);
-  });
-  return () => eventSource.close();
-};
-
-export const subscribeTaskRealtime = (handlers: {
+const subscribeTaskEventSource = (handlers: {
   onEvent?: (payload: TaskRealtimeEventDto) => void;
   onUpdate?: (payload: WebTaskUpdateDto) => void;
 }): (() => void) => {
-  const token = getAdminToken();
-  const eventSource = new EventSource(
-    `${getApiBase()}/events/tasks${token ? `?token=${encodeURIComponent(token)}` : ""}`,
-  );
+  const eventSource = new EventSource(taskEventsUrl());
   eventSource.addEventListener("task-update", (event) => {
     handlers.onUpdate?.(JSON.parse(event.data) as WebTaskUpdateDto);
   });
@@ -251,4 +266,19 @@ export const subscribeTaskRealtime = (handlers: {
     handlers.onEvent?.(JSON.parse(event.data) as TaskRealtimeEventDto);
   });
   return () => eventSource.close();
+};
+
+export const subscribeTaskUpdates = (onUpdate: (payload: WebTaskUpdateDto) => void): (() => void) => {
+  return subscribeTaskEventSource({ onUpdate });
+};
+
+export const subscribeTaskEvents = (onEvent: (payload: TaskRealtimeEventDto) => void): (() => void) => {
+  return subscribeTaskEventSource({ onEvent });
+};
+
+export const subscribeTaskRealtime = (handlers: {
+  onEvent?: (payload: TaskRealtimeEventDto) => void;
+  onUpdate?: (payload: WebTaskUpdateDto) => void;
+}): (() => void) => {
+  return subscribeTaskEventSource(handlers);
 };
