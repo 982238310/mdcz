@@ -1,7 +1,7 @@
-import type { AppRouter } from "@mdcz/server/router";
 import type { TaskRealtimeEventDto, WebTaskUpdateDto } from "@mdcz/shared";
 import type { Configuration } from "@mdcz/shared/config";
-import { createTRPCClient, httpLink, type TRPCClient } from "@trpc/client";
+import type { ServerApiContract } from "@mdcz/shared/serverApi";
+import { createTRPCUntypedClient, httpLink } from "@trpc/client";
 
 const DEFAULT_API_BASE = "http://127.0.0.1:3838";
 const API_BASE_KEY = "mdcz-web-api-base";
@@ -70,14 +70,16 @@ const getAuthorizationHeaders = (): Record<string, string> => {
   return { authorization: `Bearer ${token}` };
 };
 
-let trpcCache: { baseUrl: string; client: TRPCClient<AppRouter> } | null = null;
+type WebTrpcClient = ReturnType<typeof createTRPCUntypedClient>;
 
-const getTrpc = (): TRPCClient<AppRouter> => {
+let trpcCache: { baseUrl: string; client: WebTrpcClient } | null = null;
+
+const getTrpc = (): WebTrpcClient => {
   const baseUrl = getApiBase();
   if (trpcCache?.baseUrl === baseUrl) {
     return trpcCache.client;
   }
-  const client = createTRPCClient<AppRouter>({
+  const client = createTRPCUntypedClient({
     links: [
       httpLink({
         headers: getAuthorizationHeaders,
@@ -90,162 +92,147 @@ const getTrpc = (): TRPCClient<AppRouter> => {
   return client;
 };
 
-type TrpcClient = TRPCClient<AppRouter>;
-type FacadeProcedure<TProcedure> = TProcedure extends {
-  query: (input: infer TInput, ...args: infer TRest) => infer TOutput;
-}
-  ? undefined extends TInput
-    ? (input?: TInput, ...args: TRest) => TOutput
-    : (input: TInput, ...args: TRest) => TOutput
-  : TProcedure extends { mutate: (input: infer TInput, ...args: infer TRest) => infer TOutput }
-    ? undefined extends TInput
-      ? (input?: TInput, ...args: TRest) => TOutput
-      : (input: TInput, ...args: TRest) => TOutput
-    : TProcedure extends object
-      ? { [TKey in keyof TProcedure as TKey extends symbol ? never : TKey]: FacadeProcedure<TProcedure[TKey]> }
-      : never;
-type TrpcFacade = FacadeProcedure<TrpcClient>;
-type WebApiFacade = Omit<TrpcFacade, "config" | "maintenance"> & {
-  config: Omit<TrpcFacade["config"], "read"> & {
-    read: () => Promise<Configuration>;
-  };
-  maintenance: Omit<TrpcFacade["maintenance"], "execute"> & {
-    apply: TrpcFacade["maintenance"]["execute"];
-  };
-};
+const trpcQuery = async <TOutput>(path: string, input?: unknown): Promise<TOutput> =>
+  (await getTrpc().query(path, input)) as TOutput;
 
-export const api: WebApiFacade = {
+const trpcMutation = async <TOutput>(path: string, input?: unknown): Promise<TOutput> =>
+  (await getTrpc().mutation(path, input)) as TOutput;
+
+export const api: ServerApiContract = {
   auth: {
-    setup: () => getTrpc().auth.setup.query(undefined),
+    setup: () => trpcQuery("auth.setup"),
     login: async (input) => {
-      const session = await getTrpc().auth.login.mutate(input);
+      const session = await trpcMutation<Awaited<ReturnType<ServerApiContract["auth"]["login"]>>>("auth.login", input);
       setAdminToken(session.token);
       return session;
     },
     logout: async () => {
-      const session = await getTrpc().auth.logout.mutate(undefined);
+      const session = await trpcMutation<Awaited<ReturnType<ServerApiContract["auth"]["logout"]>>>("auth.logout");
       setAdminToken(undefined);
       return session;
     },
-    status: () => getTrpc().auth.status.query(undefined),
+    status: () => trpcQuery("auth.status"),
   },
   app: {
-    ensureWatermarkDirectory: () => getTrpc().app.ensureWatermarkDirectory.mutate(undefined),
+    ensureWatermarkDirectory: () => trpcMutation("app.ensureWatermarkDirectory"),
   },
   browser: {
-    list: (input) => getTrpc().browser.list.query(input),
+    list: (input) => trpcQuery("browser.list", input),
   },
   crawler: {
-    listSites: () => getTrpc().crawler.listSites.query(undefined),
-    probeSiteConnectivity: (input) => getTrpc().crawler.probeSiteConnectivity.mutate(input),
+    listSites: () => trpcQuery("crawler.listSites"),
+    probeSiteConnectivity: (input) => trpcMutation("crawler.probeSiteConnectivity", input),
   },
   network: {
-    checkCookies: () => getTrpc().network.checkCookies.mutate(undefined),
+    checkCookies: () => trpcMutation("network.checkCookies"),
   },
   translate: {
-    testLlm: (input) => getTrpc().translate.testLlm.mutate(input),
+    testLlm: (input) => trpcMutation("translate.testLlm", input),
   },
   serverPaths: {
-    suggest: (input) => getTrpc().serverPaths.suggest.query(input),
+    suggest: (input) => trpcQuery("serverPaths.suggest", input),
   },
   config: {
-    defaults: () => getTrpc().config.defaults.query(undefined),
-    export: () => getTrpc().config.export.query(undefined),
-    import: (input) => getTrpc().config.import.mutate(input),
-    read: async () => (await getTrpc().config.read.query({})) as Configuration,
-    previewNaming: (input) => getTrpc().config.previewNaming.mutate(input),
-    reset: (input) => getTrpc().config.reset.mutate(input ?? {}),
-    update: (input) => getTrpc().config.update.mutate(input),
-    save: (input) => getTrpc().config.save.mutate(input),
+    defaults: () => trpcQuery("config.defaults"),
+    export: () => trpcQuery("config.export"),
+    import: (input) => trpcMutation("config.import", input),
+    read: async () => await trpcQuery<Configuration>("config.read", {}),
+    previewNaming: (input) => trpcMutation("config.previewNaming", input),
+    reset: (input) => trpcMutation("config.reset", input ?? {}),
+    update: (input) => trpcMutation("config.update", input),
+    save: (input) => trpcMutation("config.save", input),
     profiles: {
-      list: () => getTrpc().config.profiles.list.query(undefined),
-      create: (input) => getTrpc().config.profiles.create.mutate(input),
-      switch: (input) => getTrpc().config.profiles.switch.mutate(input),
-      delete: (input) => getTrpc().config.profiles.delete.mutate(input),
-      export: (input) => getTrpc().config.profiles.export.mutate(input),
-      import: (input) => getTrpc().config.profiles.import.mutate(input),
+      list: () => trpcQuery("config.profiles.list"),
+      create: (input) => trpcMutation("config.profiles.create", input),
+      switch: (input) => trpcMutation("config.profiles.switch", input),
+      delete: (input) => trpcMutation("config.profiles.delete", input),
+      export: (input) => trpcMutation("config.profiles.export", input),
+      import: (input) => trpcMutation("config.profiles.import", input),
     },
   },
   health: {
-    read: () => getTrpc().health.read.query(undefined),
+    read: () => trpcQuery("health.read"),
   },
   system: {
-    about: () => getTrpc().system.about.query(undefined),
+    about: () => trpcQuery("system.about"),
   },
   logs: {
-    list: (input) => getTrpc().logs.list.query(input),
-    clearRuntime: () => getTrpc().logs.clearRuntime.mutate(undefined),
+    list: (input) => trpcQuery("logs.list", input),
+    clearRuntime: () => trpcMutation("logs.clearRuntime"),
   },
   maintenance: {
-    scanSelectedFiles: (input) => getTrpc().maintenance.scanSelectedFiles.query(input),
-    apply: (input) => getTrpc().maintenance.execute.mutate(input),
-    pause: (input) => getTrpc().maintenance.pause.mutate(input),
-    preview: (input) => getTrpc().maintenance.preview.query(input),
-    recover: () => getTrpc().maintenance.recover.query(undefined),
-    resume: (input) => getTrpc().maintenance.resume.mutate(input),
-    start: (input) => getTrpc().maintenance.start.mutate(input),
-    stop: (input) => getTrpc().maintenance.stop.mutate(input),
+    scanSelectedFiles: (input) => trpcQuery("maintenance.scanSelectedFiles", input),
+    apply: (input) => trpcMutation("maintenance.execute", input),
+    pause: (input) => trpcMutation("maintenance.pause", input),
+    preview: (input) => trpcQuery("maintenance.preview", input),
+    recover: () => trpcQuery("maintenance.recover"),
+    resume: (input) => trpcMutation("maintenance.resume", input),
+    start: (input) => trpcMutation("maintenance.start", input),
+    stop: (input) => trpcMutation("maintenance.stop", input),
   },
   library: {
-    list: (input) => getTrpc().library.list.query(input),
-    search: (input) => getTrpc().library.search.query(input),
-    detail: (input) => getTrpc().library.detail.query(input),
-    refresh: (input) => getTrpc().library.refresh.mutate(input),
-    rescan: (input) => getTrpc().library.rescan.mutate(input),
-    relink: (input) => getTrpc().library.relink.mutate(input),
-    delete: (input) => getTrpc().library.delete.mutate(input),
+    list: (input) => trpcQuery("library.list", input),
+    search: (input) => trpcQuery("library.search", input),
+    detail: (input) => trpcQuery("library.detail", input),
+    refresh: (input) => trpcMutation("library.refresh", input),
+    rescan: (input) => trpcMutation("library.rescan", input),
+    relink: (input) => trpcMutation("library.relink", input),
+    delete: (input) => trpcMutation("library.delete", input),
   },
   overview: {
-    summary: () => getTrpc().overview.summary.query(undefined),
-    removeRecentAcquisition: (input) => getTrpc().overview.removeRecentAcquisition.mutate(input),
+    summary: () => trpcQuery("overview.summary"),
+    removeRecentAcquisition: (input) => trpcMutation("overview.removeRecentAcquisition", input),
   },
   mediaRoots: {
-    list: () => getTrpc().mediaRoots.list.query(undefined),
+    list: () => trpcQuery("mediaRoots.list"),
   },
   persistence: {
-    status: () => getTrpc().persistence.status.query(undefined),
+    status: () => trpcQuery("persistence.status"),
   },
   tools: {
-    catalog: () => getTrpc().tools.catalog.query(undefined),
-    execute: (input) => getTrpc().tools.execute.mutate(input),
+    catalog: () => trpcQuery("tools.catalog"),
+    execute: (input) => trpcMutation("tools.execute", input),
   },
   scans: {
-    candidates: (input) => getTrpc().scans.candidates.query(input),
-    detail: (input) => getTrpc().scans.detail.query(input),
-    events: (input) => getTrpc().scans.events.query(input),
-    list: () => getTrpc().scans.list.query(undefined),
-    retry: (input) => getTrpc().scans.retry.mutate(input),
-    start: (input) => getTrpc().scans.start.mutate(input),
+    candidates: (input) => trpcQuery("scans.candidates", input),
+    detail: (input) => trpcQuery("scans.detail", input),
+    events: (input) => trpcQuery("scans.events", input),
+    list: () => trpcQuery("scans.list"),
+    retry: (input) => trpcMutation("scans.retry", input),
+    start: (input) => trpcMutation("scans.start", input),
   },
   scrape: {
-    startSelectedFiles: (input) => getTrpc().scrape.startSelectedFiles.mutate(input),
-    deleteFile: (input) => getTrpc().scrape.deleteFile.mutate(input),
-    listResults: (input) => getTrpc().scrape.listResults.query(input),
-    getRecoverableSession: () => getTrpc().scrape.getRecoverableSession.query(undefined),
-    nfoRead: (input) => getTrpc().scrape.nfoRead.query(input),
-    nfoWrite: (input) => getTrpc().scrape.nfoWrite.mutate(input),
-    pause: (input) => getTrpc().scrape.pause.mutate(input),
-    result: (input) => getTrpc().scrape.result.query(input),
-    resume: (input) => getTrpc().scrape.resume.mutate(input),
-    retry: (input) => getTrpc().scrape.retry.mutate(input),
-    confirmUncensored: (input) => getTrpc().scrape.confirmUncensored.mutate(input),
-    resolveRecoverableSession: (input) => getTrpc().scrape.resolveRecoverableSession.mutate(input),
-    start: (input) => getTrpc().scrape.start.mutate(input),
-    stop: (input) => getTrpc().scrape.stop.mutate(input),
+    startSelectedFiles: (input) => trpcMutation("scrape.startSelectedFiles", input),
+    deleteFile: (input) => trpcMutation("scrape.deleteFile", input),
+    listResults: (input) => trpcQuery("scrape.listResults", input),
+    getRecoverableSession: () => trpcQuery("scrape.getRecoverableSession"),
+    nfoRead: (input) => trpcQuery("scrape.nfoRead", input),
+    nfoWrite: (input) => trpcMutation("scrape.nfoWrite", input),
+    pause: (input) => trpcMutation("scrape.pause", input),
+    result: (input) => trpcQuery("scrape.result", input),
+    resume: (input) => trpcMutation("scrape.resume", input),
+    retry: (input) => trpcMutation("scrape.retry", input),
+    confirmUncensored: (input) => trpcMutation("scrape.confirmUncensored", input),
+    resolveRecoverableSession: (input) => trpcMutation("scrape.resolveRecoverableSession", input),
+    start: (input) => trpcMutation("scrape.start", input),
+    stop: (input) => trpcMutation("scrape.stop", input),
   },
   tasks: {
-    detail: (input) => getTrpc().tasks.detail.query(input),
-    events: (input) => getTrpc().tasks.events.query(input),
-    list: () => getTrpc().tasks.list.query(undefined),
-    retry: (input) => getTrpc().tasks.retry.mutate(input),
+    detail: (input) => trpcQuery("tasks.detail", input),
+    events: (input) => trpcQuery("tasks.events", input),
+    list: () => trpcQuery("tasks.list"),
+    retry: (input) => trpcMutation("tasks.retry", input),
   },
   setup: {
     complete: async (input) => {
-      const session = await getTrpc().setup.complete.mutate(input);
+      const session = await trpcMutation<Awaited<ReturnType<ServerApiContract["setup"]["complete"]>>>(
+        "setup.complete",
+        input,
+      );
       setAdminToken(session.token);
       return session;
     },
-    status: () => getTrpc().setup.status.query(undefined),
+    status: () => trpcQuery("setup.status"),
   },
 };
 

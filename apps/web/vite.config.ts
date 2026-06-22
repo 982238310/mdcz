@@ -38,7 +38,6 @@ export default defineConfig({
     alias: [
       { find: /^@mdcz\/shared$/, replacement: workspaceResolve("packages/shared/browser.ts") },
       { find: /^@mdcz\/shared\/(.+)$/, replacement: workspaceResolve("packages/shared/$1") },
-      { find: /^@mdcz\/server\/router$/, replacement: workspaceResolve("apps/server/src/router.ts") },
       { find: /^@mdcz\/ui$/, replacement: workspaceResolve("packages/ui/src/index.ts") },
       { find: /^@mdcz\/views$/, replacement: workspaceResolve("packages/views/src/index.ts") },
       { find: /^@mdcz\/views\/(.+)$/, replacement: workspaceResolve("packages/views/src/$1") },

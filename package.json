@@ -21,7 +21,7 @@
     "build:server": "pnpm --filter @mdcz/server build",
     "build:web": "pnpm --filter @mdcz/web build",
     "build:webui": "pnpm --filter @mdcz/server build:webui",
-    "package:webui": "node scripts/package-server-webui.mjs",
+    "package:webui": "pnpm build:webui && node scripts/package-server-webui.mjs",
     "build:win": "pnpm --filter @mdcz/desktop build:win",
     "build:mac": "pnpm --filter @mdcz/desktop build:mac",
     "build:linux": "pnpm --filter @mdcz/desktop build:linux",

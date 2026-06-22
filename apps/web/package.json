@@ -29,7 +29,6 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
-    "@mdcz/server": "workspace:*",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/node": "^24.3.1",
     "@types/react": "^19.2.14",

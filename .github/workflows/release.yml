@@ -110,7 +110,7 @@ jobs:
               release/*/*.dmg
               release/*/*.zip
           - os: ubuntu-latest
-            script: build:webui
+            script: package:webui
             artifact: webui-portable
             glob: "release/mdcz-*.tar.gz"
 
@@ -130,11 +130,6 @@ jobs:
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Package Server/WebUI
-        if: matrix.script == 'build:webui'
-        run: pnpm package:webui
-        env:
           MDCZ_RELEASE_VERSION: ${{ needs.version.outputs.version }}
 
       - uses: actions/upload-artifact@v6

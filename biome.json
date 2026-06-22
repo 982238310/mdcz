@@ -77,10 +77,6 @@
                   "@main": "Desktop main aliases are Electron-only.",
                   "@renderer": "Desktop renderer aliases are not WebUI dependencies.",
                   "@mdcz/server": "Server code must not be bundled into WebUI.",
-                  "@mdcz/server/router": {
-                    "allowImportNames": ["AppRouter"],
-                    "message": "WebUI may only import the temporary AppRouter type contract from @mdcz/server/router."
-                  },
                   "electron": "Electron APIs are desktop-only."
                 },
                 "patterns": [
@@ -105,7 +101,7 @@
                     "message": "Desktop renderer aliases are not WebUI dependencies."
                   },
                   {
-                    "group": ["@mdcz/server/*", "!@mdcz/server/router"],
+                    "group": ["@mdcz/server/*"],
                     "message": "Server code must not be bundled into WebUI."
                   }
                 ]
