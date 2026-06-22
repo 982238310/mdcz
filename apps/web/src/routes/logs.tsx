@@ -17,6 +17,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { api, subscribeTaskEvents } from "../client";
+import { queryKeys } from "../lib/queryKeys";
 import { ErrorBanner } from "../routeCommon";
 
 export const LogsPage = () => {
@@ -28,7 +29,7 @@ export const LogsPage = () => {
   const [query, setQuery] = useState("");
   const [autoScroll, setAutoScroll] = useState(true);
   const [isClearDialogOpen, setIsClearDialogOpen] = useState(false);
-  const logsQueryKey = useMemo(() => ["logs", activeTaskIds] as const, [activeTaskIds]);
+  const logsQueryKey = useMemo(() => queryKeys.logs.list(activeTaskIds), [activeTaskIds]);
   const logsQ = useQuery({
     queryKey: logsQueryKey,
     queryFn: () =>
@@ -41,7 +42,7 @@ export const LogsPage = () => {
   const clearRuntimeM = useMutation({
     mutationFn: () => api.logs.clearRuntime(),
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: ["logs"] });
+      await queryClient.invalidateQueries({ queryKey: queryKeys.logs.all });
       setIsClearDialogOpen(false);
       toast.success("日志已成功清空");
     },

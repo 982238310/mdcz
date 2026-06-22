@@ -2,20 +2,22 @@ import { toErrorMessage } from "@mdcz/shared/error";
 import type { LibraryEntryDto } from "@mdcz/shared/serverDtos";
 import type { LibraryAvailabilityFilter } from "@mdcz/views/library";
 import { LibraryDeleteDialog, LibraryIndexView } from "@mdcz/views/library";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api, getLibraryAssetSrc } from "../client";
+import { queryKeys } from "../lib/queryKeys";
 import { AppLink } from "../routeCommon";
 
 export function LibraryPage() {
+  const queryClient = useQueryClient();
   const [query, setQuery] = useState("");
   const [availabilityFilter, setAvailabilityFilter] = useState<LibraryAvailabilityFilter>("all");
   const [deleteTarget, setDeleteTarget] = useState<LibraryEntryDto | null>(null);
   const libraryQ = useQuery({
-    queryKey: ["library", "search", query],
+    queryKey: queryKeys.library.search(query),
     queryFn: () => api.library.search({ query, limit: 300 }),
     retry: false,
   });
@@ -33,7 +35,7 @@ export function LibraryPage() {
         onDeleteEntry={setDeleteTarget}
         onQueryChange={setQuery}
         onRefresh={() => {
-          void libraryQ.refetch();
+          void queryClient.invalidateQueries({ queryKey: queryKeys.library.search(query) });
         }}
         query={query}
         total={libraryQ.data?.total ?? 0}
@@ -46,7 +48,7 @@ export function LibraryPage() {
           if (!target) return;
           void deleteLibraryEntry(target, () => {
             setDeleteTarget(null);
-            void libraryQ.refetch();
+            void queryClient.invalidateQueries({ queryKey: queryKeys.library.all });
           });
         }}
       />

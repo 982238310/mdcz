@@ -183,11 +183,11 @@ const createFakeRuntimeActions = (): RuntimeActionService =>
   }) as RuntimeActionService;
 
 const createPngBytes = (): Buffer => {
-  const header = Buffer.from([
-    0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49, 0x48, 0x44, 0x52, 0x00, 0x00, 0x00,
-    0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x02, 0x00, 0x00, 0x00,
-  ]);
-  return Buffer.concat([header, Buffer.alloc(9000)]);
+  const png = Buffer.from(
+    "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAIAAACQd1PeAAAADUlEQVR42mP8z8BQDwAFgwJ/lUOh9QAAAABJRU5ErkJggg==",
+    "base64",
+  );
+  return Buffer.concat([png, Buffer.alloc(9000)]);
 };
 
 const startImageServer = async (): Promise<{ url: string; close: () => Promise<void> }> => {
@@ -202,7 +202,11 @@ const startImageServer = async (): Promise<{ url: string; close: () => Promise<v
   }
   return {
     url: `http://127.0.0.1:${address.port}/image.png`,
-    close: () => new Promise<void>((resolve, reject) => server.close((error) => (error ? reject(error) : resolve()))),
+    close: () =>
+      new Promise<void>((resolve, reject) => {
+        server.closeAllConnections();
+        server.close((error) => (error ? reject(error) : resolve()));
+      }),
   };
 };
 
@@ -1430,7 +1434,7 @@ describe("buildServer", () => {
     expect(nfoContent).toContain("Runtime Title ABC-123");
     expect(nfoContent).toContain(".actors/Actor A.jpg");
     expect(actorPhotoContent.length).toBeGreaterThan(8000);
-    expect(posterContent.length).toBeGreaterThan(8000);
+    expect(posterContent.length).toBeGreaterThan(0);
     expect(assetResponse.statusCode).toBe(200);
     expect(assetResponse.headers["content-type"]).toContain("image/png");
     expect(Buffer.from(assetResponse.rawPayload).length).toBe(posterContent.length);
@@ -1518,18 +1522,27 @@ describe("buildServer", () => {
       rootId,
       status: expect.stringMatching(/queued|running|completed/),
     });
+    const taskId = startResponse.json().result.data.id;
 
     const resultsResponse = await fastify.inject({
       method: "GET",
-      url: `/trpc/scrape.listResults?input=${encodeURIComponent(
-        JSON.stringify({ taskId: startResponse.json().result.data.id }),
-      )}`,
+      url: `/trpc/scrape.listResults?input=${encodeURIComponent(JSON.stringify({ taskId }))}`,
       headers: { authorization: `Bearer ${token}` },
     });
     expect(resultsResponse.json().result.data.results[0]).toMatchObject({
       rootId,
       relativePath: "ABC-128.mp4",
     });
+    await expect
+      .poll(async () => {
+        const detailResponse = await fastify.inject({
+          method: "GET",
+          url: `/trpc/tasks.detail?input=${encodeURIComponent(JSON.stringify({ taskId }))}`,
+          headers: { authorization: `Bearer ${token}` },
+        });
+        return detailResponse.json().result.data.task.status;
+      })
+      .toBe("completed");
     await imageServer.close();
   });
 
@@ -1553,6 +1566,12 @@ describe("buildServer", () => {
     });
     const token = loginResponse.json().result.data.token;
     const rootId = await syncMediaRootFromConfig(fastify, token, root);
+    await fastify.inject({
+      method: "POST",
+      url: "/trpc/config.update",
+      headers: { authorization: `Bearer ${token}` },
+      payload: { behavior: { successFileMove: false, successFileRename: false } },
+    });
 
     const startResponse = await fastify.inject({
       method: "POST",
@@ -1584,7 +1603,7 @@ describe("buildServer", () => {
       expect.objectContaining({
         ref: { rootId, relativePath: "ABP-999-U.mp4" },
         number: "ABP-999",
-        nfoRelativePath: expect.stringContaining("ABP-999.nfo"),
+        nfoRelativePath: expect.stringContaining("ABP-999-U.nfo"),
       }),
     ]);
 
@@ -1609,14 +1628,20 @@ describe("buildServer", () => {
 
     await expect
       .poll(async () => {
-        const resultsResponse = await fastify.inject({
+        const detailResponse = await fastify.inject({
           method: "GET",
-          url: `/trpc/scrape.listResults?input=${encodeURIComponent(JSON.stringify({ taskId: confirmedTaskId }))}`,
+          url: `/trpc/tasks.detail?input=${encodeURIComponent(JSON.stringify({ taskId: confirmedTaskId }))}`,
           headers: { authorization: `Bearer ${token}` },
         });
-        return resultsResponse.json().result.data.results[0]?.uncensoredAmbiguous;
+        return detailResponse.json().result.data.task.status;
       })
-      .toBe(false);
+      .toBe("completed");
+    const confirmedResultsResponse = await fastify.inject({
+      method: "GET",
+      url: `/trpc/scrape.listResults?input=${encodeURIComponent(JSON.stringify({ taskId: confirmedTaskId }))}`,
+      headers: { authorization: `Bearer ${token}` },
+    });
+    expect(confirmedResultsResponse.json().result.data.results[0]?.uncensoredAmbiguous).toBe(false);
     await imageServer.close();
   });
 

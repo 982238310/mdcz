@@ -27,6 +27,7 @@ import { toast } from "sonner";
 import { useShallow } from "zustand/react/shallow";
 import { createWebWorkbenchPorts } from "../adapters/ports";
 import { api } from "../client";
+import { queryKeys } from "../lib/queryKeys";
 
 export const Route = createFileRoute("/workbench")({
   validateSearch: (search): { intent?: "maintenance" } => ({
@@ -100,7 +101,7 @@ function WorkbenchPage() {
     })),
   );
   const activeScrapeTaskId = hydrationState.activeScrapeTaskId;
-  const configQ = useQuery({ queryFn: () => api.config.read(), queryKey: ["config"], retry: false });
+  const configQ = useQuery({ queryFn: () => api.config.read(), queryKey: queryKeys.config.current, retry: false });
 
   const { isScraping, scrapeStatus, results } = useScrapeStore(
     useShallow((state) => ({
@@ -162,7 +163,7 @@ function WorkbenchPage() {
       isScraping,
       setWorkbenchMode,
       onRefreshConfig: async () => {
-        await queryClient.invalidateQueries({ queryKey: ["config"] });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.config.all });
       },
       toast,
       toErrorMessage,

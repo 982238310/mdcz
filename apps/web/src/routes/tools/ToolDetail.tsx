@@ -24,6 +24,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { api } from "../../client";
+import { queryKeys } from "../../lib/queryKeys";
 import { AppLink, ErrorBanner } from "../../routeCommon";
 import {
   fileCleanerCandidatesFromResponse,
@@ -49,9 +50,9 @@ export const ToolDetail = ({ toolId }: { toolId: ToolId }) => {
   const [embyCheckResult, setEmbyCheckResult] = useState<EmbyConnectionCheckResult | null>(null);
   const [jellyfinMessage, setJellyfinMessage] = useState<string | null>(null);
   const [embyMessage, setEmbyMessage] = useState<string | null>(null);
-  const rootsQ = useQuery({ queryKey: ["mediaRoots"], queryFn: () => api.mediaRoots.list(), retry: false });
+  const rootsQ = useQuery({ queryKey: queryKeys.mediaRoots.list, queryFn: () => api.mediaRoots.list(), retry: false });
   const browserQ = useQuery({
-    queryKey: ["browser", singleFileRootId],
+    queryKey: queryKeys.browser.list(singleFileRootId),
     queryFn: () => api.browser.list({ rootId: singleFileRootId, relativePath: "" }),
     enabled: Boolean(singleFileRootId),
     retry: false,
@@ -60,8 +61,8 @@ export const ToolDetail = ({ toolId }: { toolId: ToolId }) => {
     mutationFn: (input: Parameters<typeof api.tools.execute>[0]) => api.tools.execute(input),
     onSuccess: async (_response, input) => {
       if (input.toolId === "single-file-scraper") {
-        await queryClient.invalidateQueries({ queryKey: ["tasks"] });
-        await queryClient.invalidateQueries({ queryKey: ["scrapeResults"] });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.tasks.all });
+        await queryClient.invalidateQueries({ queryKey: queryKeys.scrape.results() });
       }
     },
   });

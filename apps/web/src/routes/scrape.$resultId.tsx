@@ -7,6 +7,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { createWebDetailPort } from "../adapters/ports";
 import { api } from "../client";
+import { queryKeys } from "../lib/queryKeys";
 import { ErrorBanner } from "../routeCommon";
 
 export function ScrapeResultPage() {
@@ -14,7 +15,7 @@ export function ScrapeResultPage() {
   const detailPort = useMemo(() => createWebDetailPort(), []);
   const detailQ = useQuery({
     queryFn: () => api.scrape.result({ id: resultId }),
-    queryKey: ["scrape", "result", resultId],
+    queryKey: queryKeys.scrape.result(resultId),
     retry: false,
   });
   const detailItem = detailQ.data?.result

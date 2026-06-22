@@ -21,6 +21,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { api } from "../client";
+import { queryKeys } from "../lib/queryKeys";
 import { ErrorBanner } from "../routeCommon";
 
 // Web-only route: setup is the server first-run wizard for admin auth and mounted media-root registration.
@@ -28,7 +29,7 @@ import { ErrorBanner } from "../routeCommon";
 export const SetupPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const setupQ = useQuery({ queryKey: ["setup"], queryFn: () => api.setup.status(), retry: false });
+  const setupQ = useQuery({ queryKey: queryKeys.setup.status, queryFn: () => api.setup.status(), retry: false });
   const [step, setStep] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +61,13 @@ export const SetupPage = () => {
         mediaRoot: { displayName, hostPath, enabled: true },
       }),
     onSuccess: async () => {
-      await queryClient.invalidateQueries();
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: queryKeys.auth.status }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.setup.status }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.config.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.mediaRoots.all }),
+        queryClient.invalidateQueries({ queryKey: queryKeys.overview.all }),
+      ]);
       await navigate({ to: "/", replace: true });
     },
   });

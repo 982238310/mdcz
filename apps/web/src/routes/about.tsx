@@ -2,9 +2,10 @@ import { AboutView } from "@mdcz/views/about";
 import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { api } from "../client";
+import { queryKeys } from "../lib/queryKeys";
 
 export const AboutPage = () => {
-  const aboutQ = useQuery({ queryKey: ["system", "about"], queryFn: () => api.system.about(), retry: false });
+  const aboutQ = useQuery({ queryKey: queryKeys.system.about, queryFn: () => api.system.about(), retry: false });
 
   return (
     <AboutView

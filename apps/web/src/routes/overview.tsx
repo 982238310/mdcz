@@ -6,11 +6,12 @@ import {
   RecentAcquisitionRemoveDialog,
   RecentAcquisitionsGrid,
 } from "@mdcz/views/overview";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { api, getLibraryAssetSrc } from "../client";
+import { queryKeys } from "../lib/queryKeys";
 import { ErrorBanner } from "../routeCommon";
 import { buildHref } from "../routeHelpers";
 
@@ -27,10 +28,11 @@ export const hasWorkbenchOutput = (input: {
 
 export function OverviewPage() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [removeTarget, setRemoveTarget] = useState<OverviewRecentAcquisitionDto | null>(null);
-  const setupQ = useQuery({ queryKey: ["setup"], queryFn: () => api.setup.status(), retry: false });
+  const setupQ = useQuery({ queryKey: queryKeys.setup.status, queryFn: () => api.setup.status(), retry: false });
   const overviewQ = useQuery({
-    queryKey: ["overview", "summary"],
+    queryKey: queryKeys.overview.summary,
     queryFn: () => api.overview.summary(),
     retry: false,
   });
@@ -80,7 +82,7 @@ export function OverviewPage() {
             items={recent}
             onItemRemove={setRemoveTarget}
             onRetry={() => {
-              void overviewQ.refetch();
+              void queryClient.invalidateQueries({ queryKey: queryKeys.overview.summary });
             }}
           />
         </section>
@@ -93,7 +95,7 @@ export function OverviewPage() {
           if (!target) return;
           void removeRecentAcquisition(target, () => {
             setRemoveTarget(null);
-            void overviewQ.refetch();
+            void queryClient.invalidateQueries({ queryKey: queryKeys.overview.summary });
           });
         }}
       />

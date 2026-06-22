@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { api } from "../client";
 import { LoginPage } from "../components/auth/LoginPage";
 import { useWebTaskSync } from "../hooks/useWebTaskSync";
+import { queryKeys } from "../lib/queryKeys";
 
 const PUBLIC_PATHS = new Set(["/setup", "/login"]);
 
@@ -19,7 +20,7 @@ export const RootLayout = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const pathname = location.pathname;
-  const authQ = useQuery({ queryKey: ["auth", "status"], queryFn: () => api.auth.status(), retry: false });
+  const authQ = useQuery({ queryKey: queryKeys.auth.status, queryFn: () => api.auth.status(), retry: false });
   const setupRequired = Boolean(authQ.data?.setupRequired);
   const authenticated = Boolean(authQ.data?.authenticated);
 

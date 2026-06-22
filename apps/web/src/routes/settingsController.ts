@@ -10,6 +10,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { api } from "../client";
 import { CURRENT_CONFIG_QUERY_KEY } from "../hooks/configQueries";
+import { queryKeys } from "../lib/queryKeys";
 
 export const PROFILE_IMPORT_FILTERS: Array<{ name: string; extensions: string[] }> = [
   { name: "TOML/JSON", extensions: ["toml", "json"] },
@@ -86,7 +87,7 @@ export const createSettingsNotifier = (): SettingsNotifier => ({
 });
 
 export const invalidateConfigQueries = (queryClient: QueryClient): void => {
-  queryClient.invalidateQueries({ queryKey: ["config"] });
+  queryClient.invalidateQueries({ queryKey: queryKeys.config.all });
 };
 
 export const ensureProfileActionReady = (actionLabel: string): boolean => {

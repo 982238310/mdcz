@@ -1,15 +1,16 @@
 import type { Configuration } from "@mdcz/shared/config";
 import { queryOptions, type UseQueryOptions, useQuery } from "@tanstack/react-query";
 import { api } from "../client";
+import { queryKeys } from "../lib/queryKeys";
 
 export interface ConfigProfilesOutput {
   profiles: string[];
   active: string;
 }
 
-export const CURRENT_CONFIG_QUERY_KEY = ["config", "current"] as const;
-export const DEFAULT_CONFIG_QUERY_KEY = ["config", "defaults"] as const;
-export const CONFIG_PROFILES_QUERY_KEY = ["config", "profiles"] as const;
+export const CURRENT_CONFIG_QUERY_KEY = queryKeys.config.current;
+export const DEFAULT_CONFIG_QUERY_KEY = queryKeys.config.defaults;
+export const CONFIG_PROFILES_QUERY_KEY = queryKeys.config.profiles;
 
 export const currentConfigQueryOptions = () =>
   queryOptions({
