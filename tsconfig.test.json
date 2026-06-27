@@ -20,5 +20,11 @@
     "packages/**/*.tsx",
     "packages/ui/src/**/*.tsx",
     "vitest.config.ts"
+  ],
+  "exclude": [
+    "apps/desktop/src/renderer/src/App.tsx",
+    "apps/desktop/src/renderer/src/index.tsx",
+    "apps/web/src/main.tsx",
+    "apps/web/src/router.tsx"
   ]
 }
