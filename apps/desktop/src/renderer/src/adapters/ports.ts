@@ -40,6 +40,7 @@ export const createDesktopDetailPort = (): DetailActionPort => ({
     openFolder: "enabled",
     openNfo: "enabled",
   },
+  showFilePath: true,
   resolveImageCandidates: resolveDesktopImageCandidates,
   play: (item) => {
     if (!item.path) {

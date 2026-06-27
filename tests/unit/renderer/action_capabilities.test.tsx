@@ -36,6 +36,7 @@ describe("action capability rendering", () => {
         nfo={nfo}
         onOpenNfo={() => undefined}
         resolveImageCandidates={resolveImageCandidates}
+        showFilePath
       />,
     );
 
@@ -51,6 +52,7 @@ describe("action capability rendering", () => {
         openFolder: "hidden",
         openNfo: "enabled",
       },
+      showFilePath: true,
       resolveImageCandidates: vi.fn(async (candidates) => candidates),
       play: vi.fn(),
       openFolder: vi.fn(),

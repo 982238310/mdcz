@@ -2,6 +2,7 @@ import type { FieldDiff, LocalScanEntry, MaintenanceItemResult, MaintenancePrevi
 import { Badge, Button, Dialog, DialogContent, DialogDescription, DialogTitle, ScrollArea } from "@mdcz/ui";
 import { FileText, FolderOpen, GitCompareArrows, ImageIcon, MousePointerClick, Play, Star, X } from "lucide-react";
 import { type Dispatch, type SetStateAction, useState } from "react";
+import { NaturalAspectImageFrame } from "../common";
 import { ChangeDiffView, type MaintenanceFieldSelectionSide, PathPlanView } from "../maintenance";
 import { type EditableNfoData, NfoEditorDialog, type NfoValidationErrors } from "../nfo";
 import { formatBitrate, formatDuration } from "./detailViewAdapters";
@@ -43,6 +44,7 @@ export interface DetailPanelViewProps {
   onPosterError?: () => void;
   onThumbError?: () => void;
   resolveImageCandidates: ResolveImageCandidates;
+  showFilePath: boolean;
 }
 
 function EmptyState({ message }: { message: string }) {
@@ -152,6 +154,7 @@ export function DetailPanelView({
   onPosterError,
   onThumbError,
   resolveImageCandidates,
+  showFilePath,
 }: DetailPanelViewProps) {
   const [thumbPreviewOpen, setThumbPreviewOpen] = useState(false);
 
@@ -183,7 +186,7 @@ export function DetailPanelView({
 
         <ScrollArea className="flex-1 min-h-0">
           <div className="flex min-h-full flex-col space-y-4 px-5 pb-24 md:px-6">
-            {compareError && item.path ? <DetailPathBlock label="文件路径" value={item.path} /> : null}
+            {showFilePath && compareError && item.path ? <DetailPathBlock label="文件路径" value={item.path} /> : null}
             {compareError ? <DetailErrorBlock value={compareError} /> : null}
 
             {shouldRenderDiffs ? (
@@ -196,6 +199,8 @@ export function DetailPanelView({
                 preview={compare.preview}
                 fieldSelections={compare.fieldSelections}
                 onFieldSelectionChange={compare.onFieldSelectionChange}
+                resolveImageCandidates={resolveImageCandidates}
+                imageBaseDir={item.outputPath ?? (item.path ? getDirFromPath(item.path) : undefined)}
               />
             ) : null}
 
@@ -253,7 +258,7 @@ export function DetailPanelView({
                     </div>
                   </div>
                 </div>
-                {item.path ? <DetailPathBlock label="文件路径" value={item.path} /> : null}
+                {showFilePath && item.path ? <DetailPathBlock label="文件路径" value={item.path} /> : null}
                 {item.errorMessage ? <DetailErrorBlock value={item.errorMessage} /> : null}
               </>
             ) : (
@@ -351,13 +356,13 @@ export function DetailPanelView({
                     <DetailSectionTitle>缩略图</DetailSectionTitle>
                     <button
                       type="button"
-                      className="inline-flex max-w-full cursor-zoom-in overflow-hidden rounded-quiet-sm transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
+                      className="block w-full max-w-4xl cursor-zoom-in transition-transform hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring/40"
                       onClick={() => setThumbPreviewOpen(true)}
                     >
-                      <img
+                      <NaturalAspectImageFrame
                         src={thumbSrc}
                         alt={`${posterAlt} 缩略图`}
-                        className="block max-h-100 max-w-full rounded-quiet-sm object-contain"
+                        className="rounded-quiet-lg border border-black/5 bg-surface-low/70 shadow-[0_18px_48px_rgba(0,0,0,0.08)]"
                         onError={onThumbError}
                       />
                     </button>
@@ -376,7 +381,7 @@ export function DetailPanelView({
                   </section>
                 ) : null}
 
-                {item.path ? <DetailPathBlock label="文件路径" value={item.path} /> : null}
+                {showFilePath && item.path ? <DetailPathBlock label="文件路径" value={item.path} /> : null}
                 {item.errorMessage ? <DetailErrorBlock value={item.errorMessage} /> : null}
               </>
             )}

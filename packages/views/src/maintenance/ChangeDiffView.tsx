@@ -1,11 +1,13 @@
 import type { ActorProfile, CrawlerData, FieldDiff, LocalScanEntry, MaintenancePreviewItem } from "@mdcz/shared/types";
-import { Badge, cn, Dialog, DialogContent, DialogDescription, DialogTitle } from "@mdcz/ui";
+import { cn, Dialog, DialogContent, DialogDescription, DialogTitle } from "@mdcz/ui";
 import { ChevronLeft, ChevronRight, ImageIcon, X } from "lucide-react";
-import { type ReactNode, useCallback, useEffect, useMemo, useState } from "react";
+import { type ReactNode, useCallback, useEffect, useState } from "react";
+import { ImageOptionCard } from "../common";
 
 export type MaintenanceFieldSelectionSide = "old" | "new";
 
 export interface MaintenanceImageOptionProps {
+  defaultAspectRatio?: number;
   src: string;
   fallbackSrcs?: string[];
   label: string;
@@ -17,13 +19,21 @@ export interface MaintenanceImageOptionProps {
     value: string;
   }>;
   onClick?: () => void;
+  baseDir?: string;
+  imageFrameClassName?: string;
+  metadataClassName?: string;
+  resolveImageCandidates?: ResolveMaintenanceImageCandidates;
 }
 
 export interface MaintenanceSceneImageOptionProps {
   images: string[];
   maxThumbnails?: number;
   label?: string;
+  baseDir?: string;
+  resolveImageCandidates?: ResolveMaintenanceImageCandidates;
 }
+
+export type ResolveMaintenanceImageCandidates = (candidates: string[], baseDir?: string) => Promise<string[]>;
 
 export interface ChangeDiffViewProps {
   fileId: string;
@@ -36,6 +46,8 @@ export interface ChangeDiffViewProps {
   onFieldSelectionChange?: (fileId: string, field: FieldDiff["field"], side: MaintenanceFieldSelectionSide) => void;
   renderImageOption?: (props: MaintenanceImageOptionProps) => ReactNode;
   renderSceneImages?: (props: MaintenanceSceneImageOptionProps) => ReactNode;
+  resolveImageCandidates?: ResolveMaintenanceImageCandidates;
+  imageBaseDir?: string;
 }
 
 const toJoinedProfileNames = (profiles: ActorProfile[]) => profiles.map((profile) => profile.name).join(", ");
@@ -160,6 +172,73 @@ const resolveImageSourceValue = (
   return toDisplaySourceValue(side === "old" ? diff.oldValue : diff.newValue || previewSrc);
 };
 
+const dedupeValues = (values: string[]): string[] =>
+  values
+    .map((value) => value.trim())
+    .filter((value, index, items) => value.length > 0 && items.indexOf(value) === index);
+
+const defaultResolveImageCandidates: ResolveMaintenanceImageCandidates = async (candidates) => dedupeValues(candidates);
+
+const getImageDisplayProps = (
+  field: FieldDiff["field"],
+): Pick<MaintenanceImageOptionProps, "defaultAspectRatio" | "imageFrameClassName" | "metadataClassName"> => {
+  if (field === "poster_url") {
+    return {
+      defaultAspectRatio: 2 / 3,
+      imageFrameClassName: "max-w-48",
+      metadataClassName: "max-w-48",
+    };
+  }
+
+  return {
+    defaultAspectRatio: 16 / 9,
+    imageFrameClassName: "max-w-xl",
+    metadataClassName: "max-w-xl",
+  };
+};
+
+const getDirFromPath = (path: string | undefined): string | undefined => {
+  const trimmed = path?.trim();
+  if (!trimmed) {
+    return undefined;
+  }
+  const normalized = trimmed.replace(/[\\/]+$/u, "");
+  const index = Math.max(normalized.lastIndexOf("/"), normalized.lastIndexOf("\\"));
+  return index >= 0 ? normalized.slice(0, index) : undefined;
+};
+
+const getMaintenanceImageBaseDir = (entry: LocalScanEntry | undefined): string | undefined =>
+  entry?.currentDir || getDirFromPath(entry?.nfoPath) || getDirFromPath(entry?.fileInfo.filePath);
+
+const useResolvedMaintenanceImageCandidates = (
+  resolveImageCandidates: ResolveMaintenanceImageCandidates,
+  rawCandidates: string[],
+  baseDir?: string,
+): string[] => {
+  const candidateKey = rawCandidates.map((candidate) => candidate.trim()).join("\u0000");
+  const [resolved, setResolved] = useState<string[]>([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const candidates = candidateKey ? candidateKey.split("\u0000").filter(Boolean) : [];
+
+    const resolve = async () => {
+      const next = await resolveImageCandidates(candidates, baseDir);
+      if (!cancelled) {
+        setResolved(next);
+      }
+    };
+
+    void resolve();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [baseDir, candidateKey, resolveImageCandidates]);
+
+  return resolved;
+};
+
 function DiffOption({
   title,
   value,
@@ -192,78 +271,13 @@ function DiffOption({
   );
 }
 
-function DefaultImageOptionCard({
-  src,
-  fallbackSrcs = [],
-  label,
-  selected = false,
-  onClick,
-  empty = false,
-  emptyText = "暂无图片",
-  sourceRows = [],
-}: MaintenanceImageOptionProps) {
-  const [candidateIndex, setCandidateIndex] = useState(0);
-  const candidates = useMemo(() => {
-    const raw = empty || !src.trim() ? fallbackSrcs : [src, ...fallbackSrcs];
-    return raw.filter((candidate, index, items) => candidate.trim().length > 0 && items.indexOf(candidate) === index);
-  }, [empty, fallbackSrcs, src]);
-  const renderSrc = candidates[candidateIndex] ?? "";
-  const clickable = Boolean(onClick) && !empty;
-  const content = (
-    <div className="flex min-w-0 flex-col items-center gap-4">
-      <div className="relative mx-auto flex h-40 w-full max-w-xl shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/20 sm:h-72">
-        {empty || !renderSrc ? (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-            <ImageIcon className="h-8 w-8 opacity-40" />
-            <span className="text-xs">{emptyText}</span>
-          </div>
-        ) : (
-          <img
-            src={renderSrc}
-            alt={label}
-            className="block h-full w-full max-w-full object-contain object-center"
-            onError={() => {
-              setCandidateIndex((currentIndex) =>
-                currentIndex < candidates.length - 1 ? currentIndex + 1 : candidates.length,
-              );
-            }}
-          />
-        )}
-      </div>
-      <div className="mx-auto flex w-full max-w-xl min-w-0 flex-col justify-center gap-2">
-        <div className="flex items-center gap-2">
-          <Badge variant={selected ? "default" : "secondary"}>{label}</Badge>
-        </div>
-        {sourceRows.map((row) => (
-          <div key={row.label} className="flex min-w-0 items-center gap-1 text-sm text-muted-foreground">
-            <span className="shrink-0">{row.label}:</span>
-            <span className="min-w-0 truncate text-foreground/85" title={row.value}>
-              {row.value}
-            </span>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-  const className = cn(
-    "block w-full min-w-0 overflow-hidden rounded-xl bg-card p-4 text-left align-top transition-all duration-200",
-    empty ? "border-2 border-dashed border-muted-foreground/25" : "border-2",
-    selected ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-muted-foreground/20",
-    clickable && "cursor-pointer",
-  );
-
-  if (clickable) {
-    return (
-      <button type="button" onClick={onClick} className={className}>
-        {content}
-      </button>
-    );
-  }
-
-  return <div className={className}>{content}</div>;
-}
-
-function DefaultSceneImageGallery({ images, maxThumbnails = 8, label = "预览" }: MaintenanceSceneImageOptionProps) {
+function DefaultSceneImageGallery({
+  images,
+  maxThumbnails = 8,
+  label = "预览",
+  baseDir,
+  resolveImageCandidates = defaultResolveImageCandidates,
+}: MaintenanceSceneImageOptionProps) {
   const [lightboxIndex, setLightboxIndex] = useState(-1);
   const isOpen = lightboxIndex >= 0;
   const visibleThumbnails = images.slice(0, maxThumbnails);
@@ -314,7 +328,12 @@ function DefaultSceneImageGallery({ images, maxThumbnails = 8, label = "预览" 
             }}
             className="h-14 w-20 shrink-0 cursor-pointer rounded-md border bg-muted/20 transition-all hover:ring-2 hover:ring-primary/50"
           >
-            <img src={imagePath} alt={`Scene ${index + 1}`} className="h-full w-full rounded-md object-cover" />
+            <ResolvedSceneThumbnail
+              src={imagePath}
+              alt={`Scene ${index + 1}`}
+              baseDir={baseDir}
+              resolveImageCandidates={resolveImageCandidates}
+            />
           </button>
         ))}
         {remainingCount > 0 && (
@@ -378,10 +397,11 @@ function DefaultSceneImageGallery({ images, maxThumbnails = 8, label = "预览" 
           )}
           <div className="flex max-h-[82vh] max-w-[90vw] items-center justify-center">
             {lightboxIndex >= 0 && lightboxIndex < images.length && (
-              <img
+              <ResolvedSceneLightboxImage
                 src={images[lightboxIndex]}
                 alt={`Scene ${lightboxIndex + 1}`}
-                className="block max-h-[82vh] max-w-[90vw] object-contain"
+                baseDir={baseDir}
+                resolveImageCandidates={resolveImageCandidates}
               />
             )}
           </div>
@@ -389,6 +409,54 @@ function DefaultSceneImageGallery({ images, maxThumbnails = 8, label = "预览" 
       </Dialog>
     </div>
   );
+}
+
+function ResolvedSceneThumbnail({
+  src,
+  alt,
+  baseDir,
+  resolveImageCandidates,
+}: {
+  src: string;
+  alt: string;
+  baseDir?: string;
+  resolveImageCandidates: ResolveMaintenanceImageCandidates;
+}) {
+  const [resolvedSrc = ""] = useResolvedMaintenanceImageCandidates(resolveImageCandidates, [src], baseDir);
+
+  if (!resolvedSrc) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <ImageIcon className="h-4 w-4 text-muted-foreground/30" />
+      </div>
+    );
+  }
+
+  return <img src={resolvedSrc} alt={alt} className="h-full w-full rounded-md object-cover" />;
+}
+
+function ResolvedSceneLightboxImage({
+  src,
+  alt,
+  baseDir,
+  resolveImageCandidates,
+}: {
+  src: string;
+  alt: string;
+  baseDir?: string;
+  resolveImageCandidates: ResolveMaintenanceImageCandidates;
+}) {
+  const [resolvedSrc = ""] = useResolvedMaintenanceImageCandidates(resolveImageCandidates, [src], baseDir);
+
+  if (!resolvedSrc) {
+    return (
+      <div className="flex h-full w-full items-center justify-center">
+        <ImageIcon className="h-8 w-8 text-white/25" />
+      </div>
+    );
+  }
+
+  return <img src={resolvedSrc} alt={alt} className="block max-h-[82vh] max-w-[90vw] object-contain" />;
 }
 
 function SceneImageOption({
@@ -399,6 +467,7 @@ function SceneImageOption({
   emptyText,
   onClick,
   renderSceneImages,
+  baseDir,
 }: {
   title: string;
   images: string[];
@@ -407,6 +476,7 @@ function SceneImageOption({
   emptyText: string;
   onClick?: () => void;
   renderSceneImages: (props: MaintenanceSceneImageOptionProps) => ReactNode;
+  baseDir?: string;
 }) {
   const clickable = Boolean(onClick) && !disabled;
   const titleNode = <div className="text-xs font-medium text-muted-foreground">{title}</div>;
@@ -427,7 +497,7 @@ function SceneImageOption({
         <div className="mb-2">{titleNode}</div>
       )}
       {images.length > 0 ? (
-        renderSceneImages({ images, maxThumbnails: 8 })
+        renderSceneImages({ images, maxThumbnails: 8, baseDir })
       ) : (
         <div className="flex min-h-28 items-center justify-center rounded-lg border border-dashed bg-muted/20 text-sm text-muted-foreground">
           {emptyText}
@@ -446,9 +516,24 @@ export function ChangeDiffView({
   preview,
   fieldSelections,
   onFieldSelectionChange,
-  renderImageOption = (props) => <DefaultImageOptionCard {...props} />,
+  renderImageOption = (props) => <ImageOptionCard {...props} />,
   renderSceneImages = (props) => <DefaultSceneImageGallery {...props} />,
+  resolveImageCandidates = defaultResolveImageCandidates,
+  imageBaseDir,
 }: ChangeDiffViewProps) {
+  const baseDir = imageBaseDir || getMaintenanceImageBaseDir(entry);
+  const renderResolvedImageOption = (props: MaintenanceImageOptionProps) =>
+    renderImageOption({
+      ...props,
+      baseDir,
+      resolveImageCandidates,
+    });
+  const renderResolvedSceneImages = (props: MaintenanceSceneImageOptionProps) =>
+    renderSceneImages({
+      ...props,
+      baseDir,
+      resolveImageCandidates,
+    });
   const selectField = (field: FieldDiff["field"], side: MaintenanceFieldSelectionSide) => {
     onFieldSelectionChange?.(fileId, field, side);
   };
@@ -461,10 +546,12 @@ export function ChangeDiffView({
     if (diff.kind === "image") {
       const oldImage = resolveMaintenanceDiffImageOption(diff, "old");
       const newImage = resolveMaintenanceDiffImageOption(diff, "new");
+      const imageDisplayProps = getImageDisplayProps(diff.field);
 
       return (
         <div className="grid gap-3 md:grid-cols-2">
-          {renderImageOption({
+          {renderResolvedImageOption({
+            ...imageDisplayProps,
             src: oldImage.src,
             fallbackSrcs: oldImage.fallbackSrcs,
             label: "旧 (当前)",
@@ -476,7 +563,8 @@ export function ChangeDiffView({
             ],
             onClick: hasOldValue && hasNewValue ? () => selectField(diff.field, "old") : undefined,
           })}
-          {renderImageOption({
+          {renderResolvedImageOption({
+            ...imageDisplayProps,
             src: newImage.src,
             fallbackSrcs: newImage.fallbackSrcs,
             label: "新 (预览)",
@@ -508,7 +596,8 @@ export function ChangeDiffView({
             disabled={!hasOldValue}
             emptyText="当前没有本地剧照"
             onClick={hasOldValue && hasNewValue ? () => selectField(diff.field, "old") : undefined}
-            renderSceneImages={renderSceneImages}
+            renderSceneImages={renderResolvedSceneImages}
+            baseDir={baseDir}
           />
           <SceneImageOption
             title="新 (预览)"
@@ -517,7 +606,8 @@ export function ChangeDiffView({
             disabled={!hasNewValue}
             emptyText="新值为空"
             onClick={hasOldValue && hasNewValue ? () => selectField(diff.field, "new") : undefined}
-            renderSceneImages={renderSceneImages}
+            renderSceneImages={renderResolvedSceneImages}
+            baseDir={baseDir}
           />
         </div>
       );
@@ -546,7 +636,8 @@ export function ChangeDiffView({
   const renderUnchangedValue = (diff: FieldDiff) => {
     if (diff.kind === "image") {
       const current = resolveMaintenanceDiffImageOption(diff, "old");
-      return renderImageOption({
+      return renderResolvedImageOption({
+        ...getImageDisplayProps(diff.field),
         src: current.src,
         fallbackSrcs: current.fallbackSrcs,
         label: "当前值",
@@ -567,7 +658,8 @@ export function ChangeDiffView({
           selected={false}
           disabled
           emptyText="当前没有剧照"
-          renderSceneImages={renderSceneImages}
+          renderSceneImages={renderResolvedSceneImages}
+          baseDir={baseDir}
         />
       );
     }

@@ -110,6 +110,10 @@ export function DetailPanelAdapter({
     [explicitItem, results, selectedResultId],
   );
   const artwork = useResolvedArtworkSources(compare ? null : item, port);
+  const resolveImageCandidates = useCallback(
+    async (candidates: string[], baseDir?: string) => await port.resolveImageCandidates(candidates, baseDir, item),
+    [item, port],
+  );
 
   const [nfoOpen, setNfoOpenRaw] = useState(false);
   const [nfoPath, setNfoPath] = useState("");
@@ -256,7 +260,8 @@ export function DetailPanelAdapter({
       onOpenNfo={actions.openNfo}
       onPosterError={artwork.handlePosterError}
       onThumbError={artwork.handleThumbError}
-      resolveImageCandidates={port.resolveImageCandidates}
+      resolveImageCandidates={resolveImageCandidates}
+      showFilePath={port.showFilePath}
     />
   );
 }

@@ -1,35 +1,11 @@
 import { toErrorMessage } from "@mdcz/shared/error";
-import type { AmazonPosterApplyItem, AmazonPosterImageOptionProps } from "@mdcz/views/tools";
+import type { AmazonPosterApplyItem } from "@mdcz/views/tools";
 import { AmazonPosterWorkspaceDetail } from "@mdcz/views/tools";
 import { useCallback, useState } from "react";
+import { resolveDesktopImageCandidates } from "@/adapters/ports";
 import { ipc } from "@/client/ipc";
-import { ImageOptionCard } from "@/components/ImageOptionCard";
 import { useToast } from "@/contexts/ToastProvider";
-import { useResolvedImageSrc } from "@/hooks/useResolvedImageSources";
 import { browseDirectoryPath } from "./toolUtils";
-
-function SummaryThumb({
-  empty = false,
-  loading = false,
-  src,
-}: {
-  empty?: boolean;
-  loading?: boolean;
-  src?: string | null;
-}) {
-  const resolvedSrc = useResolvedImageSrc(src ? [src] : []);
-
-  if (loading) return <div className="h-[22px] w-8 animate-pulse rounded-md bg-muted/50" />;
-  if (empty || !resolvedSrc) {
-    return (
-      <div className="flex h-[22px] w-8 items-center justify-center rounded-md border border-dashed border-muted-foreground/30 bg-muted/20">
-        <span className="text-[10px] text-muted-foreground/50">IMG</span>
-      </div>
-    );
-  }
-
-  return <img src={resolvedSrc} alt="thumbnail" className="h-[22px] w-8 rounded-md border bg-muted/20 object-cover" />;
-}
 
 export function AmazonPoster() {
   const { showError, showInfo, showSuccess } = useToast();
@@ -85,14 +61,6 @@ export function AmazonPoster() {
     }
   };
 
-  const renderImageOption = useCallback((props: AmazonPosterImageOptionProps) => <ImageOptionCard {...props} />, []);
-
-  const renderThumbnail = useCallback(
-    (src: string | null | undefined, options?: { empty?: boolean; loading?: boolean }) => (
-      <SummaryThumb src={src} empty={options?.empty} loading={options?.loading} />
-    ),
-    [],
-  );
   const handleLookup = useCallback(
     (item: (typeof items)[number]) => ipc.tool.amazonPosterLookup(item.nfoPath, item.title),
     [],
@@ -103,8 +71,7 @@ export function AmazonPoster() {
       dialogOpen={dialogOpen}
       items={items}
       scanning={scanning}
-      renderImageOption={renderImageOption}
-      renderThumbnail={renderThumbnail}
+      resolveImageCandidates={resolveDesktopImageCandidates}
       onApply={handleApply}
       onBrowseDirectory={browseDirectoryPath}
       onDialogOpenChange={setDialogOpen}

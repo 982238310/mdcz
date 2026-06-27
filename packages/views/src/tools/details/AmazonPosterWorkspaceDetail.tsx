@@ -17,6 +17,7 @@ import {
 import { ArrowRight, Check, FolderOpen, ImageIcon, LoaderCircle, Minus } from "lucide-react";
 import type { ComponentType, ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
+import { ImageOptionCard, type ResolveImageOptionCandidates } from "../../common";
 
 const LOOKUP_CONCURRENCY = 2;
 const TOOL_ICON_BUTTON_CLASS =
@@ -41,12 +42,20 @@ export interface AmazonPosterApplyItem {
 }
 
 export interface AmazonPosterImageOptionProps {
+  baseDir?: string;
+  defaultAspectRatio?: number;
   empty?: boolean;
   emptyText?: string;
+  fallbackSrcs?: string[];
+  imageFrameClassName?: string;
   label: string;
+  layout?: "inline" | "stacked";
   loading?: boolean;
+  metadataClassName?: string;
   onClick?: () => void;
+  resolveImageCandidates?: ResolveImageOptionCandidates;
   selected?: boolean;
+  showDimensions?: boolean;
   src: string;
   subtitle?: string;
   width?: number | null;
@@ -64,6 +73,7 @@ export interface AmazonPosterWorkspaceDetailProps {
   onScan: (directory: string) => void | Promise<void>;
   renderImageOption?: (props: AmazonPosterImageOptionProps) => ReactNode;
   renderThumbnail?: (src: string | null | undefined, options?: { empty?: boolean; loading?: boolean }) => ReactNode;
+  resolveImageCandidates?: ResolveImageOptionCandidates;
 }
 
 function formatElapsed(elapsedMs: number | null | undefined): string {
@@ -97,74 +107,41 @@ function getStatusBadge(state: ItemState): {
 function DefaultSummaryThumb({
   empty = false,
   loading = false,
+  resolveImageCandidates,
   src,
 }: {
   empty?: boolean;
   loading?: boolean;
+  resolveImageCandidates?: ResolveImageOptionCandidates;
   src?: string | null;
 }) {
+  const [resolvedSrc, setResolvedSrc] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const resolve = async () => {
+      const [nextSrc = ""] = await (resolveImageCandidates?.(src ? [src] : []) ?? Promise.resolve(src ? [src] : []));
+      if (!cancelled) {
+        setResolvedSrc(nextSrc);
+      }
+    };
+
+    void resolve();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [resolveImageCandidates, src]);
+
   if (loading) return <div className="h-[22px] w-8 animate-pulse rounded-md bg-muted/50" />;
-  if (empty || !src) {
+  if (empty || !resolvedSrc) {
     return (
       <div className="flex h-[22px] w-8 items-center justify-center rounded-md border border-dashed border-muted-foreground/30 bg-muted/20">
         <ImageIcon className="h-3.5 w-3.5 text-muted-foreground/50" />
       </div>
     );
   }
-  return <img src={src} alt="thumbnail" className="h-[22px] w-8 rounded-md border bg-muted/20 object-cover" />;
-}
-
-function DefaultImageOptionCard({
-  empty,
-  emptyText = "暂无图片",
-  label,
-  loading,
-  onClick,
-  selected,
-  src,
-  subtitle,
-  width,
-  height,
-}: AmazonPosterImageOptionProps) {
-  const clickable = Boolean(onClick) && !loading && !empty;
-  const content = (
-    <div className="flex min-w-0 flex-col gap-4 sm:flex-row">
-      <div className="relative flex h-40 w-full shrink-0 items-center justify-center overflow-hidden rounded-lg bg-muted/20 sm:w-48">
-        {loading ? (
-          <div className="h-full w-full animate-pulse bg-muted/40" />
-        ) : empty || !src ? (
-          <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-            <ImageIcon className="h-8 w-8 opacity-40" />
-            <span className="text-xs">{emptyText}</span>
-          </div>
-        ) : (
-          <img src={src} alt={label} className="block h-full w-full max-w-full object-contain object-center" />
-        )}
-      </div>
-      <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
-        <Badge variant={selected ? "default" : "secondary"}>{label}</Badge>
-        <div className="text-sm text-foreground">
-          <span className="text-muted-foreground">尺寸: </span>
-          <span>{width && height ? `${width} × ${height}` : "未知"}</span>
-        </div>
-        {subtitle ? <div className="break-all text-sm text-muted-foreground">{subtitle}</div> : null}
-      </div>
-    </div>
-  );
-  const className = cn(
-    "block w-full min-w-0 overflow-hidden rounded-xl bg-card p-4 text-left align-top transition-all duration-200",
-    empty ? "border-2 border-dashed border-muted-foreground/25" : "border-2",
-    selected ? "border-primary ring-2 ring-primary/20" : "border-transparent hover:border-muted-foreground/20",
-    clickable && "cursor-pointer",
-  );
-  if (clickable) {
-    return (
-      <button type="button" onClick={onClick} className={className}>
-        {content}
-      </button>
-    );
-  }
-  return <div className={className}>{content}</div>;
+  return <img src={resolvedSrc} alt="thumbnail" className="h-[22px] w-8 rounded-md border bg-muted/20 object-cover" />;
 }
 
 export function AmazonPosterWorkspaceDetail({
@@ -178,6 +155,7 @@ export function AmazonPosterWorkspaceDetail({
   onScan,
   renderImageOption,
   renderThumbnail,
+  resolveImageCandidates,
 }: AmazonPosterWorkspaceDetailProps) {
   const [directory, setDirectory] = useState("");
   const [itemStates, setItemStates] = useState<ItemState[]>([]);
@@ -271,8 +249,7 @@ export function AmazonPosterWorkspaceDetail({
     [itemStates],
   );
   const progressValue = itemStates.length > 0 ? Math.round((completedCount / itemStates.length) * 100) : 0;
-  const ImageOption =
-    renderImageOption ?? ((props: AmazonPosterImageOptionProps) => <DefaultImageOptionCard {...props} />);
+  const ImageOption = renderImageOption ?? ((props: AmazonPosterImageOptionProps) => <ImageOptionCard {...props} />);
 
   const browseDirectory = async () => {
     const selected = await onBrowseDirectory?.();
@@ -400,6 +377,7 @@ export function AmazonPosterWorkspaceDetail({
                             <DefaultSummaryThumb
                               src={state.scan.currentPosterPath}
                               empty={!state.scan.currentPosterPath}
+                              resolveImageCandidates={resolveImageCandidates}
                             />
                           )}
                           <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
@@ -413,6 +391,7 @@ export function AmazonPosterWorkspaceDetail({
                               src={state.lookup?.amazonPosterUrl}
                               loading={thumbnailLoading}
                               empty={amazonEmpty}
+                              resolveImageCandidates={resolveImageCandidates}
                             />
                           )}
                           <Badge variant={statusBadge.variant} className="h-6 gap-1 rounded-full px-2">
@@ -442,10 +421,16 @@ export function AmazonPosterWorkspaceDetail({
 
                             <div className="grid gap-3 md:grid-cols-2">
                               <ImageOption
+                                layout="inline"
+                                defaultAspectRatio={2 / 3}
                                 src={state.scan.currentPosterPath ?? ""}
+                                resolveImageCandidates={resolveImageCandidates}
                                 label="当前海报"
                                 width={state.scan.currentPosterWidth || null}
                                 height={state.scan.currentPosterHeight || null}
+                                imageFrameClassName="max-w-48"
+                                metadataClassName="max-w-48"
+                                showDimensions
                                 subtitle={getFileNameFromPath(state.scan.currentPosterPath)}
                                 selected={state.selection === "current"}
                                 onClick={
@@ -458,8 +443,14 @@ export function AmazonPosterWorkspaceDetail({
                               />
 
                               <ImageOption
+                                layout="inline"
+                                defaultAspectRatio={2 / 3}
                                 src={state.lookup?.amazonPosterUrl ?? ""}
+                                resolveImageCandidates={resolveImageCandidates}
                                 label="Amazon 海报"
+                                imageFrameClassName="max-w-48"
+                                metadataClassName="max-w-48"
+                                showDimensions
                                 subtitle={state.lookup?.amazonPosterUrl ? "Amazon.co.jp" : undefined}
                                 selected={state.selection === "amazon"}
                                 onClick={

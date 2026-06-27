@@ -26,6 +26,7 @@ export interface DetailNfoReadResponse {
 
 export interface DetailActionPort {
   capabilities?: Pick<NativeActionCapabilities, "play" | "openFolder" | "openNfo">;
+  showFilePath: boolean;
   resolveImageCandidates(candidates: string[], baseDir?: string, item?: DetailViewItem | null): Promise<string[]>;
   play(item: DetailViewItem): Promise<void> | void;
   openFolder(item: DetailViewItem): Promise<void> | void;
