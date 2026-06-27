@@ -267,6 +267,7 @@ export function SettingsEditorAutosaveProvider({
 
   const committedValuesRef = useRef<Map<string, unknown>>(new Map(Object.entries(savedValues)));
   const pendingProgrammaticValuesRef = useRef<Map<string, unknown>>(new Map());
+  const pendingSaveValuesRef = useRef<Map<string, unknown>>(new Map());
   const saveRevisionsRef = useRef<Map<string, number>>(new Map());
   const debounceTimersRef = useRef<Map<string, number>>(new Map());
   const fadeTimersRef = useRef<Map<string, number>>(new Map());
@@ -326,6 +327,7 @@ export function SettingsEditorAutosaveProvider({
   const enqueueSave = useCallback(
     (path: string, value: unknown, revision: number) => {
       servicesRef.current.incrementInFlightSaves();
+      pendingSaveValuesRef.current.set(path, value);
       clearFieldTimers(path);
       setFieldStatus(path, "saving");
 
@@ -352,6 +354,9 @@ export function SettingsEditorAutosaveProvider({
 
                 for (const [payloadPath, payloadValue] of Object.entries(flatPayload)) {
                   committedValuesRef.current.set(payloadPath, payloadValue);
+                  if (valuesEqual(pendingSaveValuesRef.current.get(payloadPath), payloadValue)) {
+                    pendingSaveValuesRef.current.delete(payloadPath);
+                  }
                 }
 
                 formRef.current.clearErrors(payloadPaths);
@@ -518,6 +523,7 @@ export function SettingsEditorAutosaveProvider({
       return () => {
         clearFieldTimers(path);
         pendingProgrammaticValuesRef.current.delete(path);
+        pendingSaveValuesRef.current.delete(path);
 
         setRegisteredFields((previous) => {
           if (!(path in previous)) {
@@ -541,6 +547,7 @@ export function SettingsEditorAutosaveProvider({
     savedValuesRef.current = savedValues;
     committedValuesRef.current = new Map(Object.entries(savedValues));
     pendingProgrammaticValuesRef.current.clear();
+    pendingSaveValuesRef.current.clear();
     saveRevisionsRef.current.clear();
 
     const pendingPaths = new Set([...debounceTimersRef.current.keys(), ...fadeTimersRef.current.keys()]);
@@ -567,9 +574,14 @@ export function SettingsEditorAutosaveProvider({
 
       const committedValue = committedValuesRef.current.get(path);
       if (valuesEqual(value, committedValue)) {
+        pendingSaveValuesRef.current.delete(path);
         if (fieldStatusesRef.current[path] === "error" && !formRef.current.getFieldState(path).error) {
           setFieldStatus(path, "idle");
         }
+        continue;
+      }
+
+      if (valuesEqual(value, pendingSaveValuesRef.current.get(path))) {
         continue;
       }
 
@@ -586,6 +598,7 @@ export function SettingsEditorAutosaveProvider({
         continue;
       }
 
+      pendingSaveValuesRef.current.set(path, value);
       const debounceTimer = window.setTimeout(() => {
         debounceTimersRef.current.delete(path);
         enqueueSave(path, value, revision);
